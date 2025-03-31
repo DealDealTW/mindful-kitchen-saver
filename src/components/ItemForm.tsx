@@ -131,6 +131,30 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
           </div>
           
           <div className="grid grid-cols-2 gap-4">
+            {/* Category first (swapped position) */}
+            <div className="grid gap-2">
+              <Label>{t('category')}</Label>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant={category === 'Food' ? 'default' : 'outline'}
+                  className="flex-1 flex items-center justify-center"
+                  onClick={() => setCategory('Food')}
+                >
+                  <Apple className="h-5 w-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={category === 'Household' ? 'default' : 'outline'}
+                  className="flex-1 flex items-center justify-center"
+                  onClick={() => setCategory('Household')}
+                >
+                  <ShoppingBag className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Quantity second (swapped position) */}
             <div className="grid gap-2">
               <Label htmlFor="quantity">{t('quantity')}</Label>
               <div className="flex items-center space-x-2">
@@ -155,28 +179,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   onClick={increaseQuantity}
                 >
                   <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid gap-2">
-              <Label>{t('category')}</Label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={category === 'Food' ? 'default' : 'outline'}
-                  className="flex-1 flex items-center justify-center"
-                  onClick={() => setCategory('Food')}
-                >
-                  <Apple className="h-5 w-5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant={category === 'Household' ? 'default' : 'outline'}
-                  className="flex-1 flex items-center justify-center"
-                  onClick={() => setCategory('Household')}
-                >
-                  <ShoppingBag className="h-5 w-5" />
                 </Button>
               </div>
             </div>

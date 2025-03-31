@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Apple, CalendarIcon, Clock, PencilIcon, Trash2Icon, Bell } from 'lucide-react';
+import { ShoppingBag, Apple, CalendarIcon, Bell, PencilIcon, Trash2Icon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { Item, calculateDaysUntilExpiry } from '@/contexts/AppContext';
@@ -47,11 +47,11 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
   return (
     <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
       <DialogContent className="sm:max-w-md rounded-xl">
-        <DialogHeader className="text-center border-b pb-4">
+        <DialogHeader className="text-center pb-2">
           <DialogTitle className="text-xl font-semibold">{selectedItem.name}</DialogTitle>
         </DialogHeader>
         
-        <div className="py-6 space-y-6">
+        <div className="py-4 space-y-5">
           <div className="flex items-center justify-between bg-card rounded-lg p-4 shadow-sm">
             <div className="flex items-center">
               {selectedItem.category === 'Food' ? (
@@ -59,9 +59,8 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
               ) : (
                 <ShoppingBag className="mr-3 h-6 w-6 text-primary" />
               )}
-              <span className="font-medium">{t(selectedItem.category.toLowerCase() as any)}</span>
             </div>
-            <div className="text-lg font-semibold">{selectedItem.quantity}</div>
+            <div className="text-2xl font-bold">{selectedItem.quantity}</div>
           </div>
           
           <div className="bg-card rounded-lg p-4 shadow-sm">
@@ -71,7 +70,12 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
                 <div className="font-medium">
                   {format(parseISO(selectedItem.expiryDate), 'MMM d, yyyy')}
                 </div>
-                <div className={cn("text-sm", getExpiryStatus())}>
+                <div className={cn(
+                  "text-sm font-medium", 
+                  daysRemaining < 0 ? "text-destructive" : 
+                  daysRemaining <= 4 ? "text-amber-500" : 
+                  "text-muted-foreground"
+                )}>
                   {daysRemaining < 0 
                     ? t('expired') 
                     : `${daysRemaining} ${t('days')} ${t('remaining')}`}
@@ -89,12 +93,12 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
             </div>
           </div>
           
-          <div className="text-sm text-muted-foreground text-center">
+          <div className="text-sm text-center text-muted-foreground">
             {t('addedOn')}: {format(parseISO(selectedItem.dateAdded), 'MMM d, yyyy')}
           </div>
         </div>
         
-        <DialogFooter className="flex sm:justify-between border-t pt-4">
+        <DialogFooter className="flex sm:justify-between pt-2">
           <Button variant="destructive" onClick={handleDelete} className="gap-2">
             <Trash2Icon className="h-4 w-4" />
             {t('delete')}
