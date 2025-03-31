@@ -202,7 +202,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   variant="outline" 
                   size="icon" 
                   onClick={decreaseQuantity}
-                  className="rounded-lg bg-muted/50"
+                  className="rounded-lg bg-muted/50 hover:bg-muted/70"
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -217,7 +217,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   variant="outline"
                   size="icon"
                   onClick={increaseQuantity}
-                  className="rounded-lg bg-muted/50"
+                  className="rounded-lg bg-muted/50 hover:bg-muted/70"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -261,7 +261,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleDaysChange(days)}
-                        className={`text-xs rounded-full px-2 min-w-[40px] h-6 ${daysUntilExpiry === days ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}
+                        className={`text-xs rounded-full px-2 min-w-[40px] h-6 ${daysUntilExpiry === days ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted/70'}`}
                       >
                         {days}
                       </Button>
@@ -320,7 +320,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                     variant="outline" 
                     size="sm" 
                     onClick={() => setNotifyDaysBefore(days)}
-                    className={`text-xs rounded-full px-2 min-w-[40px] h-6 ${notifyDaysBefore === days ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}
+                    className={`text-xs rounded-full px-2 min-w-[40px] h-6 ${notifyDaysBefore === days ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted/70'}`}
                   >
                     {days}
                   </Button>
@@ -333,11 +333,11 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
         <Separator />
         
         <DialogFooter className="p-4 flex gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="gap-2 flex-1 rounded-lg">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="gap-2 flex-1 rounded-lg hover:bg-muted/50">
             <X className="h-4 w-4" />
             {t('cancel')}
           </Button>
-          <Button type="button" onClick={handleSubmit} className="gap-2 flex-1 rounded-lg">
+          <Button type="button" onClick={handleSubmit} className="gap-2 flex-1 rounded-lg hover:bg-primary/90">
             <Save className="h-4 w-4" />
             {t('save')}
           </Button>

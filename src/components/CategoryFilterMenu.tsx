@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Apple, ShoppingBag, LayoutGrid } from 'lucide-react';
+import { Apple, ShoppingBag, LayoutGrid, Check } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -24,28 +23,49 @@ const CategoryFilterMenu: React.FC = () => {
   return (
     <div className="flex justify-center space-x-2 mb-4 mt-2">
       <Button
-        variant={isCategory && filter === 'All' ? 'default' : 'outline'}
-        className="flex-1 py-6"
+        variant="outline"
+        className={`flex-1 py-6 relative ${isCategory && filter === 'All' ? 'border-primary/50 bg-primary/5' : ''} hover:bg-muted/50`}
         onClick={() => handleFilter('All')}
       >
-        <LayoutGrid className="mr-2 h-5 w-5" />
-        {t('all')}
+        <div className="flex items-center gap-2">
+          <LayoutGrid className="h-5 w-5" />
+          {t('all')}
+        </div>
+        {isCategory && filter === 'All' && (
+          <span className="absolute top-1 right-2">
+            <Check className="h-4 w-4 text-primary" />
+          </span>
+        )}
       </Button>
       <Button
-        variant={filter === 'Food' ? 'default' : 'outline'}
-        className="flex-1 py-6"
+        variant="outline"
+        className={`flex-1 py-6 relative ${filter === 'Food' ? 'border-primary/50 bg-primary/5' : ''} hover:bg-muted/50`}
         onClick={() => handleFilter('Food')}
       >
-        <Apple className="mr-2 h-5 w-5" />
-        {t('food')}
+        <div className="flex items-center gap-2">
+          <Apple className="h-5 w-5" />
+          {t('food')}
+        </div>
+        {filter === 'Food' && (
+          <span className="absolute top-1 right-2">
+            <Check className="h-4 w-4 text-primary" />
+          </span>
+        )}
       </Button>
       <Button
-        variant={filter === 'Household' ? 'default' : 'outline'}
-        className="flex-1 py-6"
+        variant="outline"
+        className={`flex-1 py-6 relative ${filter === 'Household' ? 'border-primary/50 bg-primary/5' : ''} hover:bg-muted/50`}
         onClick={() => handleFilter('Household')}
       >
-        <ShoppingBag className="mr-2 h-5 w-5" />
-        {t('household')}
+        <div className="flex items-center gap-2">
+          <ShoppingBag className="h-5 w-5" />
+          {t('household')}
+        </div>
+        {filter === 'Household' && (
+          <span className="absolute top-1 right-2">
+            <Check className="h-4 w-4 text-primary" />
+          </span>
+        )}
       </Button>
     </div>
   );

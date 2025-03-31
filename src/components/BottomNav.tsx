@@ -26,7 +26,7 @@ const BottomNav: React.FC = () => {
           return 'text-primary border-t-2 border-primary';
       }
     }
-    return 'text-muted-foreground hover:text-primary';
+    return 'text-muted-foreground hover:text-foreground hover:bg-muted/40';
   };
   
   return (

@@ -74,6 +74,11 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+  
+  /* 全局懸停效果 */
+  .hover-effect {
+    @apply hover:bg-muted/50 transition-colors duration-200;
+  }
 }
 
 @layer components {
@@ -87,5 +92,12 @@
   
   .item-safe {
     @apply border-whatsleft-green;
+  }
+  
+  /* 全局按鈕懸停效果 */
+  button[class*="ghost"], 
+  a[class*="ghost"],
+  [role="button"] {
+    @apply hover:bg-muted/50 hover:text-foreground;
   }
 }
