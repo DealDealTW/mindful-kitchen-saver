@@ -16,7 +16,8 @@ import {
   PieChart,
   ChevronDown,
   ChevronUp,
-  InfoIcon
+  InfoIcon,
+  PercentIcon
 } from 'lucide-react';
 import { format, parseISO, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import {
@@ -132,6 +133,12 @@ const Stats: React.FC = () => {
       color: 'bg-primary/10'
     },
     { 
+      title: t('efficiency'), 
+      value: `${Math.round((usedItems.length / (usedItems.length + expiredItems.length || 1)) * 100)}%`, 
+      icon: <PercentIcon className="h-5 w-5 text-primary" />,
+      color: 'bg-primary/10' 
+    },
+    { 
       title: t('itemsUsed'), 
       value: usedItems.length, 
       icon: <CheckCircle className="h-5 w-5 text-emerald-600" />,
@@ -140,14 +147,6 @@ const Stats: React.FC = () => {
     { 
       title: t('expired'), 
       value: expiredItems.length, 
-      icon: <AlertCircle className="h-5 w-5 text-whatsleft-red" />,
-      color: 'bg-whatsleft-red/10' 
-    },
-    { 
-      title: timeframe === 'thisMonth' ? t('thisMonth') : 
-             timeframe === 'lastMonth' ? t('lastMonth') : 
-             timeframe === 'last3Months' ? t('last3Months') : t('last6Months'), 
-      value: filteredExpiredItems.length, 
       icon: <AlertCircle className="h-5 w-5 text-whatsleft-red" />,
       color: 'bg-whatsleft-red/10' 
     },
@@ -203,14 +202,10 @@ const Stats: React.FC = () => {
       <div className="space-y-6">
         {/* 最常浪費物品 */}
         <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-red/10 pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-whatsleft-red text-base flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
+          <CardHeader className="bg-whatsleft-red/10 pb-2">
+            <CardTitle className="text-whatsleft-red text-base">
               {t('mostWastedItems')}
             </CardTitle>
-            <Badge variant="outline" className="bg-whatsleft-red/10 text-whatsleft-red border-whatsleft-red">
-              {filteredExpiredItems.length}
-            </Badge>
           </CardHeader>
           <CardContent className="p-0">
             {filteredExpiredItems.length === 0 ? (
