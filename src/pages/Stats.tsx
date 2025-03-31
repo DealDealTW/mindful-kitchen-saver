@@ -1,17 +1,44 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 import { useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import { Badge } from "@/components/ui/badge";
-import { Layers, Flame, AlertCircle, CheckCircle, BookOpenCheck } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Button } from "@/components/ui/button";
+import { 
+  Layers, 
+  AlertCircle, 
+  CheckCircle, 
+  ArrowDownUp,
+  Apple,
+  ShoppingBag,
+  PieChart,
+  ChevronDown,
+  ChevronUp,
+  InfoIcon
+} from 'lucide-react';
+import { format, parseISO, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Stats: React.FC = () => {
   const { items, language } = useApp();
   const t = useTranslation(language);
+  const [timeframe, setTimeframe] = useState<string>("thisMonth");
+  const [showAllItems, setShowAllItems] = useState<boolean>(false);
   
   // 計算已使用和已過期（無使用）物品
   const usedItems = items.filter(item => item.used);
@@ -29,50 +56,72 @@ const Stats: React.FC = () => {
     !item.used && calculateDaysUntilExpiry(item.expiryDate) < 0 && item.category === 'Household'
   ).length;
   
-  // 計算即將到期物品
-  const expiringSoon = items.filter(item => {
-    if (item.used) return false;
-    const daysLeft = calculateDaysUntilExpiry(item.expiryDate);
-    return daysLeft >= 0 && daysLeft <= 5;
-  });
+  // 根據所選時間範圍篩選過期物品
+  const getFilteredExpiredItems = () => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (timeframe) {
+      case 'lastMonth':
+        startDate = startOfMonth(subMonths(now, 1));
+        return expiredItems.filter(item => {
+          const expiryDate = parseISO(item.expiryDate);
+          return isWithinInterval(expiryDate, {
+            start: startDate,
+            end: endOfMonth(subMonths(now, 1))
+          });
+        });
+      case 'last3Months':
+        startDate = subMonths(now, 3);
+        return expiredItems.filter(item => {
+          const expiryDate = parseISO(item.expiryDate);
+          return expiryDate >= startDate && expiryDate <= now;
+        });
+      case 'last6Months':
+        startDate = subMonths(now, 6);
+        return expiredItems.filter(item => {
+          const expiryDate = parseISO(item.expiryDate);
+          return expiryDate >= startDate && expiryDate <= now;
+        });
+      default: // thisMonth
+        startDate = startOfMonth(now);
+        return expiredItems.filter(item => {
+          const expiryDate = parseISO(item.expiryDate);
+          return isWithinInterval(expiryDate, {
+            start: startDate,
+            end: now
+          });
+        });
+    }
+  };
   
-  // 收集實際使用情況數據
-  interface UsageData {
+  const filteredExpiredItems = getFilteredExpiredItems();
+  
+  // 收集浪費數據
+  interface WasteData {
     name: string;
     category: 'Food' | 'Household';
-    used: number;
-    wasted: number;
+    count: number;
   }
-
-  const itemUsageData: Record<string, UsageData> = {};
   
-  usedItems.forEach(item => {
-    if (!itemUsageData[item.name]) {
-      itemUsageData[item.name] = {
-        name: item.name,
-        category: item.category,
-        used: 0,
-        wasted: 0
-      };
-    }
-    itemUsageData[item.name].used++;
-  });
+  const getWasteStats = () => {
+    const wasteMap: Record<string, WasteData> = {};
+    
+    filteredExpiredItems.forEach(item => {
+      if (!wasteMap[item.name]) {
+        wasteMap[item.name] = {
+          name: item.name,
+          category: item.category,
+          count: 0
+        };
+      }
+      wasteMap[item.name].count++;
+    });
+    
+    return Object.values(wasteMap).sort((a, b) => b.count - a.count);
+  };
   
-  expiredItems.forEach(item => {
-    if (!itemUsageData[item.name]) {
-      itemUsageData[item.name] = {
-        name: item.name,
-        category: item.category,
-        used: 0,
-        wasted: 0
-      };
-    }
-    itemUsageData[item.name].wasted++;
-  });
-  
-  // 轉換為陣列並排序
-  const usageStats = Object.values(itemUsageData)
-    .sort((a, b) => (b.wasted - a.wasted) || (b.used - a.used));
+  const wasteStats = getWasteStats();
   
   // 統計卡數據
   const statsCards = [
@@ -89,14 +138,16 @@ const Stats: React.FC = () => {
       color: 'bg-emerald-600/10' 
     },
     { 
-      title: t('expiringSoon'), 
-      value: expiringSoon.length, 
-      icon: <Flame className="h-5 w-5 text-whatsleft-yellow" />,
-      color: 'bg-whatsleft-yellow/10' 
-    },
-    { 
       title: t('expired'), 
       value: expiredItems.length, 
+      icon: <AlertCircle className="h-5 w-5 text-whatsleft-red" />,
+      color: 'bg-whatsleft-red/10' 
+    },
+    { 
+      title: timeframe === 'thisMonth' ? t('thisMonth') : 
+             timeframe === 'lastMonth' ? t('lastMonth') : 
+             timeframe === 'last3Months' ? t('last3Months') : t('last6Months'), 
+      value: filteredExpiredItems.length, 
       icon: <AlertCircle className="h-5 w-5 text-whatsleft-red" />,
       color: 'bg-whatsleft-red/10' 
     },
@@ -104,6 +155,37 @@ const Stats: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-2 py-6 pb-16">
+      {/* 時間範圍選擇器 - 移至頂部 */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <ArrowDownUp className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-primary">{t('timeframe')}</span>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-[200px]">
+                <p className="text-xs">{t('timeframeDescription')}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <Select value={timeframe} onValueChange={setTimeframe}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={t('thisMonth')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="thisMonth">{t('thisMonth')}</SelectItem>
+              <SelectItem value="lastMonth">{t('lastMonth')}</SelectItem>
+              <SelectItem value="last3Months">{t('last3Months')}</SelectItem>
+              <SelectItem value="last6Months">{t('last6Months')}</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+      
       <div className="grid grid-cols-2 gap-3 mb-6">
         {statsCards.map((card, index) => (
           <Card key={index} className={`overflow-hidden border-none shadow-sm ${card.color}`}>
@@ -119,154 +201,79 @@ const Stats: React.FC = () => {
       </div>
       
       <div className="space-y-6">
-        {/* 使用與浪費統計 */}
+        {/* 最常浪費物品 */}
         <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-primary/5 pb-2">
-            <CardTitle className="text-primary text-base">{t('usageStats')}</CardTitle>
+          <CardHeader className="bg-whatsleft-red/10 pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-whatsleft-red text-base flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              {t('mostWastedItems')}
+            </CardTitle>
+            <Badge variant="outline" className="bg-whatsleft-red/10 text-whatsleft-red border-whatsleft-red">
+              {filteredExpiredItems.length}
+            </Badge>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t('name')}</TableHead>
-                    <TableHead className="w-[100px] text-center">{t('used')}</TableHead>
-                    <TableHead className="w-[100px] text-center">{t('wasted')}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usageStats.length === 0 ? (
+            {filteredExpiredItems.length === 0 ? (
+              <div className="text-center text-muted-foreground py-6">
+                {t('noItems')}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center text-muted-foreground py-4">
-                        {t('noItems')}
-                      </TableCell>
+                      <TableHead>{t('name')}</TableHead>
+                      <TableHead className="w-[100px] text-center">{t('category')}</TableHead>
+                      <TableHead className="w-[80px] text-center">{t('wasted')}</TableHead>
                     </TableRow>
-                  ) : (
-                    usageStats.slice(0, 6).map((item, index) => (
+                  </TableHeader>
+                  <TableBody>
+                    {(showAllItems ? wasteStats : wasteStats.slice(0, 5)).map((item, index) => (
                       <TableRow key={index}>
-                        <TableCell className="font-medium flex items-center gap-2">
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="text-center">
                           {item.category === 'Food' ? (
-                            <Badge variant="outline" className="bg-emerald-600/10 text-emerald-600 border-emerald-600">
+                            <Badge variant="outline" className="bg-emerald-600/10 text-emerald-600 border-emerald-600 flex items-center gap-1 justify-center">
+                              <Apple className="h-3 w-3" />
                               {t('food')}
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary flex items-center gap-1 justify-center">
+                              <ShoppingBag className="h-3 w-3" />
                               {t('household')}
                             </Badge>
                           )}
-                          {item.name}
                         </TableCell>
                         <TableCell className="text-center">
-                          {item.used > 0 && (
-                            <Badge variant="outline" className="bg-emerald-600/10 text-emerald-600 border-emerald-600">
-                              {item.used}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {item.wasted > 0 && (
-                            <Badge variant="outline" className="bg-whatsleft-red/10 text-whatsleft-red border-whatsleft-red">
-                              {item.wasted}
-                            </Badge>
-                          )}
+                          <Badge variant="outline" className="bg-whatsleft-red/10 text-whatsleft-red border-whatsleft-red">
+                            {item.count}
+                          </Badge>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* 即將到期物品列表 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-yellow/10 pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-whatsleft-yellow text-base">{t('expiringSoon')}</CardTitle>
-            <Badge variant="outline" className="bg-whatsleft-yellow/10 text-whatsleft-yellow border-whatsleft-yellow">
-              {expiringSoon.length}
-            </Badge>
-          </CardHeader>
-          <CardContent className="p-3">
-            {expiringSoon.length === 0 ? (
-              <div className="text-center text-muted-foreground py-4">
-                {t('noExpiringItems')}
-              </div>
-            ) : (
-              <ul className="space-y-2">
-                {expiringSoon.slice(0, 5).map((item, index) => {
-                  const daysLeft = calculateDaysUntilExpiry(item.expiryDate);
-                  return (
-                    <li key={index} className="flex items-center justify-between py-1 px-2 rounded bg-muted/50">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(parseISO(item.expiryDate), 'MMM d')}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="bg-whatsleft-yellow/10 text-whatsleft-yellow border-whatsleft-yellow">
-                        {daysLeft <= 0 ? t('today') : 
-                         daysLeft === 1 ? t('tomorrow') : 
-                         `${daysLeft} ${t('days')}`}
-                      </Badge>
-                    </li>
-                  );
-                })}
-                {expiringSoon.length > 5 && (
-                  <li className="text-center text-xs text-muted-foreground pt-2">
-                    + {expiringSoon.length - 5} {t('more')}
-                  </li>
-                )}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* 使用率統計 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-emerald-600/10 pb-2">
-            <CardTitle className="text-emerald-600 text-base flex items-center gap-2">
-              <BookOpenCheck className="h-4 w-4" />
-              {t('usageOverview')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{t('food')}</span>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-emerald-600">{t('used')}: {foodItemsUsed}</span>
-                  <span className="text-whatsleft-red">{t('wasted')}: {foodItemsExpired}</span>
-                </div>
-              </div>
-              <Separator />
-              <div className="flex justify-between items-center">
-                <span className="text-sm">{t('household')}</span>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-emerald-600">{t('used')}: {householdItemsUsed}</span>
-                  <span className="text-whatsleft-red">{t('wasted')}: {householdItemsExpired}</span>
-                </div>
-              </div>
-              {(usedItems.length > 0 || expiredItems.length > 0) && (
-                <>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{t('total')}</span>
-                    <div className="flex gap-4 text-sm font-medium">
-                      <span className="text-emerald-600">{usedItems.length}</span>
-                      <span className="text-whatsleft-red">{expiredItems.length}</span>
-                    </div>
+                    ))}
+                  </TableBody>
+                </Table>
+                {wasteStats.length > 5 && (
+                  <div className="flex justify-center py-2 border-t">
+                    <Button 
+                      variant="ghost" 
+                      className="text-xs text-muted-foreground flex items-center gap-1"
+                      onClick={() => setShowAllItems(!showAllItems)}
+                    >
+                      {showAllItems ? (
+                        <>
+                          {t('showLess')} <ChevronUp className="h-3 w-3" />
+                        </>
+                      ) : (
+                        <>
+                          {t('showMore')} ({wasteStats.length - 5}) <ChevronDown className="h-3 w-3" />
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  {(usedItems.length + expiredItems.length) > 0 && (
-                    <div className="flex justify-end items-center mt-2">
-                      <Badge className="bg-emerald-600 text-white">
-                        {Math.round((usedItems.length / (usedItems.length + expiredItems.length)) * 100)}% {t('efficiency')}
-                      </Badge>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
