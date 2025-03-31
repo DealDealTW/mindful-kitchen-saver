@@ -17,6 +17,12 @@ export interface Item {
   dateUsed?: string;
 }
 
+// 應用設置接口
+export interface AppSettings {
+  defaultExpiryDays: number;
+  defaultNotifyDays: number;
+}
+
 interface AppContextType {
   items: Item[];
   addItem: (item: Omit<Item, 'id' | 'dateAdded'>) => void;
@@ -33,6 +39,10 @@ interface AppContextType {
   setLanguage: (language: 'en' | 'zh-TW' | 'zh-CN') => void;
   selectedItem: Item | null;
   setSelectedItem: (item: Item | null) => void;
+  settings: AppSettings;
+  updateSettings: (settings: Partial<AppSettings>) => void;
+  exportData: () => string;
+  importData: (jsonData: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -74,6 +84,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return savedLanguage ? JSON.parse(savedLanguage) : 'en';
   });
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  
+  // 應用設置
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    const savedSettings = localStorage.getItem('whatsleftSettings');
+    return savedSettings ? JSON.parse(savedSettings) : {
+      defaultExpiryDays: 7,
+      defaultNotifyDays: 2
+    };
+  });
 
   useEffect(() => {
     localStorage.setItem('whatsleftItems', JSON.stringify(items));
@@ -91,6 +110,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('whatsleftLanguage', JSON.stringify(language));
   }, [language]);
+  
+  useEffect(() => {
+    localStorage.setItem('whatsleftSettings', JSON.stringify(settings));
+  }, [settings]);
 
   const addItem = (item: Omit<Item, 'id' | 'dateAdded'>) => {
     const newItem: Item = {
@@ -120,6 +143,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
   };
+  
+  // 更新設置
+  const updateSettings = (newSettings: Partial<AppSettings>) => {
+    setSettings(currentSettings => ({
+      ...currentSettings,
+      ...newSettings
+    }));
+  };
+  
+  // 導出數據
+  const exportData = (): string => {
+    const exportData = {
+      items,
+      settings,
+      darkMode,
+      language
+    };
+    return JSON.stringify(exportData);
+  };
+  
+  // 導入數據
+  const importData = (jsonData: string): boolean => {
+    try {
+      const importedData = JSON.parse(jsonData);
+      
+      if (importedData.items) {
+        setItems(importedData.items);
+      }
+      
+      if (importedData.settings) {
+        setSettings(importedData.settings);
+      }
+      
+      if (importedData.darkMode !== undefined) {
+        setDarkMode(importedData.darkMode);
+      }
+      
+      if (importedData.language) {
+        setLanguage(importedData.language);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error importing data:', error);
+      return false;
+    }
+  };
 
   return (
     <AppContext.Provider
@@ -139,6 +209,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setLanguage,
         selectedItem,
         setSelectedItem,
+        settings,
+        updateSettings,
+        exportData,
+        importData
       }}
     >
       {children}

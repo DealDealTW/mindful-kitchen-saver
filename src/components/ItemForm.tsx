@@ -17,7 +17,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format } from 'date-fns';
 import { CalendarIcon, Apple, ShoppingBag, Plus, Minus, Save, X, Bell } from 'lucide-react';
-import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays } from '@/contexts/AppContext';
+import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays, ItemCategory } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -29,40 +29,28 @@ interface ItemFormProps {
 }
 
 const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => {
-  const { addItem, updateItem, language, setSelectedItem } = useApp();
+  const { addItem, updateItem, language, setSelectedItem, settings } = useApp();
   const t = useTranslation(language);
   
-  const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('1');
-  const [category, setCategory] = useState<'Food' | 'Household'>('Food');
-  const [expiryDate, setExpiryDate] = useState<Date>(new Date());
-  const [daysUntilExpiry, setDaysUntilExpiry] = useState(7);
-  const [notifyDaysBefore, setNotifyDaysBefore] = useState(2);
-  const [isUsingDays, setIsUsingDays] = useState(true);
+  const [itemName, setItemName] = useState(editItem?.name || '');
+  const [quantity, setQuantity] = useState(editItem?.quantity || '1');
+  const [category, setCategory] = useState<ItemCategory>(editItem?.category || 'Food');
+  const [expiryDate, setExpiryDate] = useState<Date>(
+    editItem?.expiryDate ? new Date(editItem.expiryDate) : new Date(getExpiryDateFromDays(settings.defaultExpiryDays))
+  );
+  const [useExpiryDate, setUseExpiryDate] = useState(!!editItem?.expiryDate);
   
-  useEffect(() => {
-    if (editItem) {
-      setName(editItem.name);
-      setQuantity(editItem.quantity);
-      setCategory(editItem.category);
-      setExpiryDate(new Date(editItem.expiryDate));
-      setDaysUntilExpiry(editItem.daysUntilExpiry);
-      setNotifyDaysBefore(editItem.notifyDaysBefore);
-    } else {
-      resetForm();
-    }
-  }, [editItem, open]);
+  const [daysUntilExpiry, setDaysUntilExpiry] = useState(
+    editItem?.daysUntilExpiry !== undefined 
+    ? editItem.daysUntilExpiry 
+    : settings.defaultExpiryDays
+  );
 
-  const resetForm = () => {
-    setName('');
-    setQuantity('1');
-    setCategory('Food');
-    const today = new Date();
-    setExpiryDate(new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000));
-    setDaysUntilExpiry(7);
-    setNotifyDaysBefore(2);
-    setIsUsingDays(true);
-  };
+  const [notifyDaysBefore, setNotifyDaysBefore] = useState(
+    editItem?.notifyDaysBefore !== undefined 
+    ? editItem.notifyDaysBefore 
+    : settings.defaultNotifyDays
+  );
 
   const handleDaysChange = (days: number) => {
     setDaysUntilExpiry(days);
@@ -106,36 +94,30 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
   };
 
   const handleSubmit = () => {
-    if (!name.trim()) return;
+    if (!itemName.trim()) return;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const expiry = new Date(expiryDate);
-    expiry.setHours(0, 0, 0, 0);
-    const actualDays = Math.round((expiry.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-    
     const formattedDate = expiryDate.toISOString().split('T')[0];
     
-    const itemData = {
-      name,
+    const item = {
+      name: itemName,
       quantity,
       category,
       expiryDate: formattedDate,
-      daysUntilExpiry: actualDays,
+      daysUntilExpiry: calculateDaysUntilExpiry(formattedDate),
       notifyDaysBefore,
     };
 
     if (editItem) {
-      updateItem(editItem.id, itemData);
-      const updatedItem = { ...editItem, ...itemData };
+      updateItem(editItem.id, item);
+      const updatedItem = { ...editItem, ...item };
       setSelectedItem(updatedItem);
     } else {
-      addItem(itemData);
+      addItem(item);
       setSelectedItem(null);
     }
 
     onOpenChange(false);
-    resetForm();
   };
 
   return (
@@ -162,8 +144,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
             <Label htmlFor="name" className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('itemName')}</Label>
             <Input 
               id="name" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
+              value={itemName} 
+              onChange={(e) => setItemName(e.target.value)} 
               placeholder="e.g., Milk, Bread..."
               className="border-muted bg-muted/50 rounded-lg"
             />
@@ -231,15 +213,15 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setIsUsingDays(!isUsingDays)}
+                onClick={() => setUseExpiryDate(!useExpiryDate)}
                 className="text-xs flex items-center gap-1"
               >
                 <CalendarIcon className="h-3 w-3" />
-                {isUsingDays ? t('expiryDate') : t('daysUntilExpiry')}
+                {useExpiryDate ? t('expiryDate') : t('daysUntilExpiry')}
               </Button>
             </div>
             
-            {isUsingDays ? (
+            {useExpiryDate ? (
               <div className="space-y-4">
                 <Input 
                   type="number" 
