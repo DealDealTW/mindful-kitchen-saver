@@ -1,9 +1,10 @@
-
 import React from 'react';
 import { Item, useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { Apple, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '@/utils/translations';
+import { format, parseISO } from 'date-fns';
+import { Badge } from "@/components/ui/badge";
 
 interface ItemCardProps {
   item: Item;
@@ -21,36 +22,55 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
     return 'item-safe';
   };
 
+  const getIconColorClass = () => {
+    if (daysRemaining < 0 || daysRemaining <= 1) return 'text-whatsleft-red';
+    if (daysRemaining <= 4) return 'text-whatsleft-yellow';
+    return 'text-whatsleft-green';
+  };
+
+  const getExpiryColor = () => {
+    if (daysRemaining < 0 || daysRemaining <= 1) return "bg-whatsleft-red/10 border-whatsleft-red text-whatsleft-red";
+    if (daysRemaining <= 4) return "bg-whatsleft-yellow/10 border-whatsleft-yellow text-whatsleft-yellow";
+    return "bg-whatsleft-green/10 border-whatsleft-green text-green-700";
+  };
+
   const getCategoryIcon = () => {
     if (item.category === 'Food') {
-      return <Apple className="h-5 w-5" />;
+      return <Apple className={`h-5 w-5 ${getIconColorClass()}`} />;
     } else {
-      return <ShoppingBag className="h-5 w-5" />;
+      return <ShoppingBag className={`h-5 w-5 ${getIconColorClass()}`} />;
     }
   };
 
   const getExpiryText = () => {
     if (daysRemaining < 0) return t('expired');
-    if (daysRemaining === 0) return `${t('expired')} today`;
-    if (daysRemaining === 1) return `${t('expiring')} tomorrow`;
+    if (daysRemaining === 0) return t('today');
+    if (daysRemaining === 1) return t('tomorrow');
     return `${daysRemaining} ${t('days')}`;
   };
 
   return (
     <div 
-      className={`relative bg-card rounded-xl p-4 shadow-sm border-2 animate-fadeIn cursor-pointer transition-all duration-200 hover:shadow-md ${getExpiryStatus()}`}
+      className={`relative rounded-xl overflow-hidden shadow-sm animate-fadeIn cursor-pointer transition-all duration-200 hover:shadow-md`}
       onClick={() => setSelectedItem(item)}
     >
-      <div className="flex justify-between items-start mb-1">
-        <h3 className="font-medium text-lg truncate pr-1">{item.name}</h3>
-        <span className="text-muted-foreground">{getCategoryIcon()}</span>
+      <div className={`${getExpiryColor()} px-3 py-2`}>
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            {getCategoryIcon()}
+            <h3 className="font-medium text-base truncate pr-1">{item.name}</h3>
+          </div>
+          <span className="font-medium">x{item.quantity}</span>
+        </div>
       </div>
       
-      <div className="flex justify-between items-center mt-2">
-        <span className="font-medium">{item.quantity}</span>
-        <span className={`text-sm font-medium ${getExpiryStatus()} ${daysRemaining >= 5 ? 'text-foreground font-semibold' : ''}`}>
-          {getExpiryText()}
+      <div className="bg-card px-3 py-2 flex justify-between items-center">
+        <span className="text-xs text-muted-foreground">
+          {format(parseISO(item.expiryDate), 'MMM d, yyyy')}
         </span>
+        <Badge variant="outline" className={`text-xs ${getExpiryColor()} border`}>
+          {getExpiryText()}
+        </Badge>
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Popover,
@@ -6,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, SortAsc, Clock, CalendarRange } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -21,32 +20,43 @@ const SortMenu: React.FC = () => {
           <ArrowUpDown className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56" align="end">
-        <div className="space-y-1">
-          <h3 className="font-medium">{t('sortBy')}</h3>
-          <div className="space-y-1 pt-1">
-            <Button
-              variant={sort === 'name' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setSort('name')}
-            >
-              {t('name')}
-            </Button>
-            <Button
-              variant={sort === 'expiry' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setSort('expiry')}
-            >
-              {t('expiryDate')}
-            </Button>
-            <Button
-              variant={sort === 'added' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setSort('added')}
-            >
-              {t('recentlyAdded')}
-            </Button>
-          </div>
+      <PopoverContent className="w-56 p-0 rounded-xl overflow-hidden" align="end">
+        <div className="bg-primary/10 p-3 border-b">
+          <h3 className="font-bold text-primary">{t('sortBy')}</h3>
+        </div>
+        <div className="divide-y">
+          <Button
+            variant="ghost"
+            className={`w-full justify-start rounded-none px-3 py-2 h-auto text-left ${sort === 'name' ? 'bg-muted' : ''}`}
+            onClick={() => setSort('name')}
+          >
+            <div className="flex items-center gap-2">
+              <SortAsc className="h-4 w-4 text-primary" />
+              <span>{t('name')}</span>
+            </div>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            className={`w-full justify-start rounded-none px-3 py-2 h-auto text-left ${sort === 'expiry' ? 'bg-muted' : ''}`}
+            onClick={() => setSort('expiry')}
+          >
+            <div className="flex items-center gap-2">
+              <CalendarRange className="h-4 w-4 text-whatsleft-orange" />
+              <span>{t('expiryDate')}</span>
+            </div>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            className={`w-full justify-start rounded-none px-3 py-2 h-auto text-left ${sort === 'added' ? 'bg-muted' : ''}`}
+            onClick={() => setSort('added')}
+          >
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-whatsleft-green" />
+              <span>{t('recentlyAdded')}</span>
+            </div>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

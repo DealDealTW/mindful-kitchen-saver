@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { addDays, differenceInDays, parseISO, format } from 'date-fns';
 
@@ -14,6 +13,8 @@ export interface Item {
   daysUntilExpiry: number;
   dateAdded: string;
   notifyDaysBefore: number;
+  used?: boolean;
+  dateUsed?: string;
 }
 
 interface AppContextType {
@@ -21,6 +22,7 @@ interface AppContextType {
   addItem: (item: Omit<Item, 'id' | 'dateAdded'>) => void;
   updateItem: (id: string, item: Partial<Item>) => void;
   deleteItem: (id: string) => void;
+  markItemAsUsed: (id: string) => void;
   filter: FilterType;
   setFilter: (filter: FilterType) => void;
   sort: 'name' | 'expiry' | 'added';
@@ -109,6 +111,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setItems(items.filter((item) => item.id !== id));
   };
 
+  const markItemAsUsed = (id: string) => {
+    setItems(
+      items.map((item) => 
+        item.id === id 
+          ? { ...item, used: true, dateUsed: new Date().toISOString() } 
+          : item
+      )
+    );
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -116,6 +128,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addItem,
         updateItem,
         deleteItem,
+        markItemAsUsed,
         filter,
         setFilter,
         sort,

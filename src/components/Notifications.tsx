@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Popover,
@@ -8,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Bell, X } from 'lucide-react';
+import { Bell, MoreHorizontal, Apple, ShoppingBag } from 'lucide-react';
 import { useApp, Item, calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import { format, parseISO } from 'date-fns';
@@ -40,22 +39,22 @@ const Notifications: React.FC = () => {
     
     if (daysUntil < 0) {
       return {
-        style: 'item-expired',
+        color: 'bg-whatsleft-red/10 border-whatsleft-red text-whatsleft-red',
         text: t('expired')
       };
     } else if (daysUntil === 0) {
       return {
-        style: 'item-expired',
+        color: 'bg-whatsleft-red/10 border-whatsleft-red text-whatsleft-red',
         text: t('expiringToday')
       };
     } else if (daysUntil === 1) {
       return {
-        style: 'item-warning',
+        color: 'bg-whatsleft-red/10 border-whatsleft-red text-whatsleft-red',
         text: t('expiringTomorrow')
       };
     } else {
       return {
-        style: 'item-warning',
+        color: 'bg-whatsleft-yellow/10 border-whatsleft-yellow text-whatsleft-yellow',
         text: `${t('expiring')} ${t('in')} ${daysUntil} ${t('days')}`
       };
     }
@@ -72,47 +71,53 @@ const Notifications: React.FC = () => {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {notificationCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-primary">
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-whatsleft-red text-white">
               {notificationCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="font-medium text-lg">{t('items')}</h3>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setOpen(false)}>
-            <X className="h-4 w-4" />
-          </Button>
+      <PopoverContent className="w-80 p-0 rounded-xl overflow-hidden" align="end">
+        <div className="bg-primary/10 p-3 border-b">
+          <h3 className="font-bold text-primary">{t('notifications')}</h3>
         </div>
         
-        <Separator className="my-2" />
-        
         {attentionItems.length === 0 ? (
-          <div className="py-4 text-center text-muted-foreground">
+          <div className="py-8 text-center text-muted-foreground">
             {t('noAttentionItems')}
           </div>
         ) : (
-          <div className="max-h-[300px] overflow-auto space-y-2">
+          <div className="max-h-[350px] overflow-auto divide-y">
             {attentionItems.map(item => {
               const status = getItemStatus(item);
               
               return (
                 <div 
                   key={item.id}
-                  className="flex items-start p-2 rounded-md hover:bg-muted cursor-pointer border"
+                  className="p-3 hover:bg-muted/50 cursor-pointer"
                   onClick={() => handleItemClick(item)}
                 >
-                  <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
-                    <div className={`text-sm ${status.style}`}>
-                      {status.text}
+                  <div className="flex justify-between items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {item.category === 'Food' ? (
+                        <Apple className="h-4 w-4 flex-shrink-0" />
+                      ) : (
+                        <ShoppingBag className="h-4 w-4 flex-shrink-0" />
+                      )}
+                      <div className="font-medium truncate">{item.name}</div>
                     </div>
+                    <div className="text-sm font-medium bg-muted/50 px-2 py-0.5 rounded-md">
+                      x{item.quantity}
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
                     <div className="text-xs text-muted-foreground">
                       {format(parseISO(item.expiryDate), 'MMM d, yyyy')}
                     </div>
+                    <Badge variant="outline" className={`text-xs ${status.color}`}>
+                      {status.text}
+                    </Badge>
                   </div>
-                  <div className="font-medium">{item.quantity}</div>
                 </div>
               );
             })}

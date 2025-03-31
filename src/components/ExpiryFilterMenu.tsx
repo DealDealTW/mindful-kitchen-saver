@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Popover,
@@ -6,7 +5,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarClock } from 'lucide-react';
+import { CalendarClock, AlertTriangle, AlertCircle, LayoutGrid } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -25,32 +24,43 @@ const ExpiryFilterMenu: React.FC = () => {
           <CalendarClock className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56" align="end">
-        <div className="space-y-1">
-          <h3 className="font-medium">{t('expiryFilter')}</h3>
-          <div className="space-y-1 pt-1">
-            <Button
-              variant={filter === 'Expiring' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setFilter('Expiring')}
-            >
-              {t('expiring')}
-            </Button>
-            <Button
-              variant={filter === 'Expired' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setFilter('Expired')}
-            >
-              {t('expired')}
-            </Button>
-            <Button
-              variant={filter !== 'Expiring' && filter !== 'Expired' ? 'default' : 'ghost'}
-              className="w-full justify-start"
-              onClick={() => setFilter('All')}
-            >
-              {t('showAll')}
-            </Button>
-          </div>
+      <PopoverContent className="w-56 p-0 rounded-xl overflow-hidden" align="end">
+        <div className="bg-primary/10 p-3 border-b">
+          <h3 className="font-bold text-primary">{t('expiryFilter')}</h3>
+        </div>
+        <div className="divide-y">
+          <Button
+            variant="ghost"
+            className={`w-full justify-start rounded-none px-3 py-2 h-auto text-left ${filter === 'Expiring' ? 'bg-muted' : ''}`}
+            onClick={() => setFilter('Expiring')}
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-whatsleft-orange" />
+              <span>{t('expiring')}</span>
+            </div>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            className={`w-full justify-start rounded-none px-3 py-2 h-auto text-left ${filter === 'Expired' ? 'bg-muted' : ''}`}
+            onClick={() => setFilter('Expired')}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-whatsleft-red" />
+              <span>{t('expired')}</span>
+            </div>
+          </Button>
+          
+          <Button
+            variant="ghost"
+            className={`w-full justify-start rounded-none px-3 py-2 h-auto text-left ${filter !== 'Expiring' && filter !== 'Expired' ? 'bg-muted' : ''}`}
+            onClick={() => setFilter('All')}
+          >
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4 text-primary" />
+              <span>{t('showAll')}</span>
+            </div>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

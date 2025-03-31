@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from 'lucide-react';
@@ -51,31 +50,34 @@ const Dashboard: React.FC = () => {
   });
 
   return (
-    <div className="container mx-auto px-4 py-4">
-      <div className="mb-2">
+    <div className="max-w-md mx-auto px-4 py-4 pb-16">
+      <div className="mb-4">
         <CategoryFilterMenu />
       </div>
       
       {sortedItems.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-muted-foreground mb-4">{t('noItems')}</p>
-          <Button onClick={handleAddItem}>
-            <PlusIcon className="mr-2 h-4 w-4" />
+        <div className="rounded-xl bg-primary/10 border border-primary/20 flex flex-col items-center justify-center py-10 text-center px-4 mt-8">
+          <h2 className="text-2xl font-bold mb-4 text-primary">{t('welcomeMessage')}</h2>
+          <div className="text-muted-foreground mb-6 max-w-md whitespace-pre-line">
+            {t('welcomeSubtitle')}
+          </div>
+          <Button onClick={handleAddItem} size="lg" className="gap-2 px-6">
+            <PlusIcon className="h-5 w-5" />
             {t('addYourFirst')}
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {sortedItems.map(item => (
             <ItemCard key={item.id} item={item} />
           ))}
         </div>
       )}
       
-      <div className="fixed bottom-20 right-4">
+      <div className="fixed bottom-20 right-4 z-20">
         <Button 
           size="icon" 
-          className="h-14 w-14 rounded-full shadow-lg"
+          className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all"
           onClick={handleAddItem}
         >
           <PlusIcon className="h-6 w-6" />

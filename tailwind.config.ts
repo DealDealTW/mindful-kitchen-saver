@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -69,6 +68,8 @@ export default {
 					orange: '#F97316', // Fire/Secondary 
 					green: '#C1E1C1', // Wood/Accent
 					red: '#ea384c', // Warning/Danger
+					blue: '#3B82F6', // Water/Warning medium
+					yellow: '#FACC15', // Medium warning
 				}
 			},
 			borderRadius: {
