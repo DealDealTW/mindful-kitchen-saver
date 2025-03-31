@@ -551,7 +551,7 @@ const Settings: React.FC = () => {
                     <div className="flex items-center gap-2 mt-3 p-2 rounded-lg bg-primary/5 border border-primary/10">
                       <Info className="h-4 w-4 text-primary flex-shrink-0" />
                       <p className="text-xs text-muted-foreground">
-                        登入後即可使用雲端儲存和家庭共享功能
+                        {t('loginFeaturePrompt')}
                       </p>
                     </div>
                   </TabsContent>
@@ -588,7 +588,7 @@ const Settings: React.FC = () => {
                     <div className="flex items-center gap-2 mt-3 p-2 rounded-lg bg-primary/5 border border-primary/10">
                       <Info className="h-4 w-4 text-primary flex-shrink-0" />
                       <p className="text-xs text-muted-foreground">
-                        登入後即可使用雲端儲存和家庭共享功能
+                        {t('loginFeaturePrompt')}
                       </p>
                     </div>
                   </TabsContent>

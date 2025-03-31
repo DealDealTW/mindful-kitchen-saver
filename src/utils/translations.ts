@@ -145,6 +145,7 @@ export const translations = {
     featureInDevelopment: 'This feature is currently in development',
     backup: 'Backup',
     restore: 'Restore',
+    loginFeaturePrompt: 'Sign in to use cloud storage and family sharing features',
   },
   'zh-TW': {
     appName: '剩食追蹤',
@@ -292,6 +293,7 @@ export const translations = {
     featureInDevelopment: '此功能正在開發中',
     backup: '備份',
     restore: '恢復',
+    loginFeaturePrompt: '登入後即可使用雲端儲存和家庭共享功能',
   },
   'zh-CN': {
     appName: '剩食追踪',
@@ -439,6 +441,7 @@ export const translations = {
     featureInDevelopment: '此功能正在开发中',
     backup: '备份',
     restore: '恢复',
+    loginFeaturePrompt: '登录后即可使用云存储和家庭共享功能',
   }
 };
 
