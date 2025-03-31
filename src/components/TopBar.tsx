@@ -4,13 +4,14 @@ import { useLocation } from 'react-router-dom';
 import { 
   ArrowUpDown,
   Bell,
-  Calendar
+  Clock,
+  CalendarClock
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import Notifications from './Notifications';
 import SortMenu from './SortMenu';
-import FilterMenu from './FilterMenu';
+import ExpiryFilterMenu from './ExpiryFilterMenu';
 
 const TopBar: React.FC = () => {
   const location = useLocation();
@@ -35,6 +36,7 @@ const TopBar: React.FC = () => {
       <h1 className="text-xl font-medium">{getTitle()}</h1>
       {location.pathname === '/' && (
         <div className="flex items-center space-x-2">
+          <ExpiryFilterMenu />
           <SortMenu />
           <Notifications />
         </div>

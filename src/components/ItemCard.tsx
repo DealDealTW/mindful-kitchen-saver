@@ -2,7 +2,7 @@
 import React from 'react';
 import { Item, useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
-import { Apple, ShoppingBagIcon } from 'lucide-react';
+import { Apple, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '@/utils/translations';
 
 interface ItemCardProps {
@@ -25,7 +25,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
     if (item.category === 'Food') {
       return <Apple className="h-5 w-5" />;
     } else {
-      return <ShoppingBagIcon className="h-5 w-5" />;
+      return <ShoppingBag className="h-5 w-5" />;
     }
   };
 
@@ -47,8 +47,8 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
       </div>
       
       <div className="flex justify-between items-center mt-2">
-        <span className="font-medium">×{item.quantity}</span>
-        <span className={`text-sm font-medium ${getExpiryStatus()} ${daysRemaining >= 5 ? 'text-foreground' : ''}`}>
+        <span className="font-medium">{item.quantity}</span>
+        <span className={`text-sm font-medium ${getExpiryStatus()} ${daysRemaining >= 5 ? 'text-foreground font-semibold' : ''}`}>
           {getExpiryText()}
         </span>
       </div>

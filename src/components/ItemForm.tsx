@@ -18,7 +18,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Slider } from "@/components/ui/slider";
 import { format, addDays } from 'date-fns';
-import { CalendarIcon, Apple, ShoppingBagIcon } from 'lucide-react';
+import { CalendarIcon, Apple, ShoppingBag, Plus, Minus } from 'lucide-react';
 import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -76,6 +76,18 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
     }
   };
 
+  const increaseQuantity = () => {
+    const currentQuantity = parseInt(quantity) || 0;
+    setQuantity((currentQuantity + 1).toString());
+  };
+
+  const decreaseQuantity = () => {
+    const currentQuantity = parseInt(quantity) || 0;
+    if (currentQuantity > 1) {
+      setQuantity((currentQuantity - 1).toString());
+    }
+  };
+
   const handleSubmit = () => {
     if (!name.trim()) return;
 
@@ -121,14 +133,29 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="quantity">{t('quantity')}</Label>
-              <div className="flex items-center">
-                <span className="mr-2">×</span>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={decreaseQuantity}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
                 <Input 
                   id="quantity" 
                   value={quantity} 
                   onChange={(e) => setQuantity(e.target.value)} 
-                  placeholder="e.g., 1, 2L..."
+                  className="text-center"
                 />
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  size="icon"
+                  onClick={increaseQuantity}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
             </div>
             
@@ -138,18 +165,18 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                 <Button
                   type="button"
                   variant={category === 'Food' ? 'default' : 'outline'}
-                  className="flex-1"
+                  className="flex-1 flex items-center justify-center"
                   onClick={() => setCategory('Food')}
                 >
-                  <Apple className="h-4 w-4" />
+                  <Apple className="h-5 w-5" />
                 </Button>
                 <Button
                   type="button"
                   variant={category === 'Household' ? 'default' : 'outline'}
-                  className="flex-1"
+                  className="flex-1 flex items-center justify-center"
                   onClick={() => setCategory('Household')}
                 >
-                  <ShoppingBagIcon className="h-4 w-4" />
+                  <ShoppingBag className="h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -224,7 +251,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                 onValueChange={(value) => setNotifyDaysBefore(value[0])}
                 className="flex-1"
               />
-              <span className="w-16 text-center">{notifyDaysBefore} {t('days')}</span>
+              <span className="w-20 text-center">{notifyDaysBefore} {t('days')}</span>
             </div>
             <div className="text-xs text-muted-foreground">
               {t('notifyBeforeDescription')}

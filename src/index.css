@@ -87,6 +87,6 @@
   }
   
   .item-safe {
-    @apply border-whatsleft-green text-whatsleft-green;
+    @apply border-whatsleft-green text-foreground font-medium;
   }
 }

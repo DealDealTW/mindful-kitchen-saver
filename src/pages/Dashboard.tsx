@@ -8,7 +8,7 @@ import ItemForm from '@/components/ItemForm';
 import { useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
-import FilterMenu from '@/components/FilterMenu';
+import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 
 const Dashboard: React.FC = () => {
   const { items, filter, sort, selectedItem, language } = useApp();
@@ -51,9 +51,9 @@ const Dashboard: React.FC = () => {
   });
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-4">
-        <FilterMenu />
+    <div className="container mx-auto px-4 py-4">
+      <div className="mb-2">
+        <CategoryFilterMenu />
       </div>
       
       {sortedItems.length === 0 ? (
