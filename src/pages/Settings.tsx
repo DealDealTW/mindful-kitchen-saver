@@ -40,7 +40,13 @@ import {
   Cloud,
   FileDown,
   FileUp,
-  ExternalLink
+  ExternalLink,
+  Users,
+  ArrowRight,
+  Bell,
+  Lock,
+  Save,
+  FileInput
 } from 'lucide-react';
 import { useApp, ItemCategory } from '@/contexts/AppContext';
 import { useTranslation, SupportedLanguage } from '@/utils/translations';
@@ -234,6 +240,11 @@ const Settings: React.FC = () => {
   
   // 處理雲端儲存
   const handleCloudStorage = async (provider: string) => {
+    if (!provider) {
+      setCloudProvider("");
+      return;
+    }
+    
     setLoadingApi(provider);
     
     try {
@@ -249,6 +260,15 @@ const Settings: React.FC = () => {
           break;
         case 'dropbox':
           apiInitialized = await initDropboxApi();
+          break;
+        case 'apple':
+          // 假設將來會實現 iCloud 整合
+          apiInitialized = true;
+          toast({
+            title: "iCloud integration coming soon",
+            description: "This feature is not yet implemented",
+            duration: 3000,
+          });
           break;
       }
       
@@ -291,6 +311,13 @@ const Settings: React.FC = () => {
       case 'dropbox':
         success = await saveToDropbox(data, 'household-harbor-backup.json');
         break;
+      case 'apple':
+        toast({
+          title: "iCloud integration coming soon",
+          description: "This feature is not yet implemented",
+          duration: 3000,
+        });
+        return;
     }
     
     if (success) {
@@ -323,6 +350,13 @@ const Settings: React.FC = () => {
       case 'dropbox':
         data = await loadFromDropbox();
         break;
+      case 'apple':
+        toast({
+          title: "iCloud integration coming soon",
+          description: "This feature is not yet implemented",
+          duration: 3000,
+        });
+        return;
     }
     
     if (data) {
@@ -448,154 +482,7 @@ const Settings: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* 數據管理卡片 - 常用的數據管理功能 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-blue/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-whatsleft-blue" />
-              <div>
-                <CardTitle className="text-whatsleft-blue">{t('dataManagement')}</CardTitle>
-                <CardDescription className="text-whatsleft-blue/70">
-                  {t('dataManagementDescription')}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            {/* 文件系統直接訪問 */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                onClick={handleDownloadBackup}
-                className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
-              >
-                <FileDown className="h-4 w-4" />
-                {t('downloadBackup')}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={handleUploadBackup}
-                className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
-              >
-                <FileUp className="h-4 w-4" />
-                {t('uploadBackup')}
-              </Button>
-            </div>
-            
-            {/* 危險操作放在底部 */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full flex items-center justify-center gap-2 mt-2 text-whatsleft-red hover:bg-whatsleft-red/10 hover:text-whatsleft-red transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t('resetData')}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('resetData')}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t('resetConfirmation')}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                  <AlertDialogAction onClick={resetData} className="bg-whatsleft-red hover:bg-whatsleft-red/90">{t('delete')}</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
-        
-        {/* 雲端儲存卡片 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-yellow/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Cloud className="h-5 w-5 text-whatsleft-yellow" />
-              <div>
-                <CardTitle className="text-whatsleft-yellow">{t('cloudStorage')}</CardTitle>
-                <CardDescription className="text-whatsleft-yellow/70">
-                  {t('cloudStorageDescription')}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            {/* 雲端儲存選項 */}
-            <div className="bg-muted/40 p-3 rounded-lg space-y-3">
-              <h3 className="text-sm font-medium">{t('chooseStorage')}</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  variant={cloudProvider === 'google' ? "default" : "outline"} 
-                  className={`w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2 ${cloudProvider === 'google' ? 'bg-whatsleft-yellow text-background hover:bg-whatsleft-yellow/90' : 'hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow'}`}
-                  disabled={!!loadingApi}
-                  onClick={() => handleCloudStorage('google')}
-                >
-                  {loadingApi === 'google' ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5" />
-                  )}
-                  <span>{t('googleDrive')}</span>
-                </Button>
-                
-                <Button 
-                  variant={cloudProvider === 'onedrive' ? "default" : "outline"} 
-                  className={`w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2 ${cloudProvider === 'onedrive' ? 'bg-whatsleft-yellow text-background hover:bg-whatsleft-yellow/90' : 'hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow'}`}
-                  disabled={!!loadingApi}
-                  onClick={() => handleCloudStorage('onedrive')}
-                >
-                  {loadingApi === 'onedrive' ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5" />
-                  )}
-                  <span>{t('oneDrive')}</span>
-                </Button>
-                
-                <Button 
-                  variant={cloudProvider === 'dropbox' ? "default" : "outline"} 
-                  className={`w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2 ${cloudProvider === 'dropbox' ? 'bg-whatsleft-yellow text-background hover:bg-whatsleft-yellow/90' : 'hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow'}`}
-                  disabled={!!loadingApi}
-                  onClick={() => handleCloudStorage('dropbox')}
-                >
-                  {loadingApi === 'dropbox' ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5" />
-                  )}
-                  <span>{t('dropbox')}</span>
-                </Button>
-              </div>
-              
-              {cloudProvider && (
-                <div className="flex justify-between gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 text-xs flex items-center justify-center gap-1 hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow transition-colors"
-                    onClick={handleSaveToCloud}
-                  >
-                    <Download className="h-4 w-4" />
-                    {t('saveToCloud')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 text-xs flex items-center justify-center gap-1 hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow transition-colors"
-                    onClick={handleLoadFromCloud}
-                  >
-                    <Upload className="h-4 w-4" />
-                    {t('loadFromCloud')}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* 用戶帳戶卡片 - 進階功能，放在後面 */}
+        {/* 帳戶卡片 */}
         <Card className="overflow-hidden border-none shadow-sm">
           <CardHeader className="bg-primary/10 pb-3">
             <div className="flex items-center gap-2">
@@ -608,152 +495,238 @@ const Settings: React.FC = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 space-y-4">
             {isLoggedIn ? (
               <div className="space-y-4">
-                <div className="bg-muted/40 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">{name}</p>
-                      <p className="text-sm text-muted-foreground">{email}</p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleLogout}
-                      className="flex items-center gap-1 hover:bg-primary/10 hover:text-primary transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {t('logout')}
-                    </Button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">John Doe</p>
+                    <p className="text-sm text-muted-foreground">john.doe@example.com</p>
                   </div>
-                </div>
-                
-                <div className="bg-muted/40 p-4 rounded-lg space-y-3">
-                  <h3 className="text-sm font-medium">{t('syncData')}</h3>
-                  <div className="flex justify-between gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 text-sm hover:bg-primary/10 hover:text-primary transition-colors"
-                    >
-                      {t('syncToCloud')}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 text-sm hover:bg-primary/10 hover:text-primary transition-colors"
-                    >
-                      {t('syncFromCloud')}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{t('lastSynced')}: 2023-10-25 14:30</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center gap-1 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => {
+                      setIsLoggedIn(false);
+                      toast({
+                        title: t('logoutSuccess'),
+                        duration: 3000,
+                      });
+                    }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t('logout')}
+                  </Button>
                 </div>
               </div>
             ) : (
-              <div>
-                <Tabs defaultValue="login" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="login" className="rounded-lg">{t('login')}</TabsTrigger>
-                    <TabsTrigger value="signup" className="rounded-lg">{t('signup')}</TabsTrigger>
+              <div className="space-y-4">
+                <Tabs defaultValue="login">
+                  <TabsList className="w-full">
+                    <TabsTrigger value="login" className="flex-1">{t('login')}</TabsTrigger>
+                    <TabsTrigger value="signup" className="flex-1">{t('signup')}</TabsTrigger>
                   </TabsList>
-                  
-                  <TabsContent value="login" className="space-y-4">
+                  <TabsContent value="login" className="space-y-4 pt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email-login" className="text-sm">{t('email')}</Label>
-                      <div className="flex items-center">
-                        <Mail className="absolute ml-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="email-login" 
-                          type="email" 
-                          className="pl-10 bg-muted/40 border-muted rounded-lg" 
-                          placeholder="user@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </div>
+                      <Label htmlFor="email">{t('email')}</Label>
+                      <Input id="email" type="email" placeholder="your.email@example.com" />
                     </div>
-                    
                     <div className="space-y-2">
-                      <Label htmlFor="password-login" className="text-sm">{t('password')}</Label>
-                      <Input 
-                        id="password-login" 
-                        type="password" 
-                        className="bg-muted/40 border-muted rounded-lg" 
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
+                      <Label htmlFor="password">{t('password')}</Label>
+                      <Input id="password" type="password" />
                     </div>
-                    
                     <Button 
-                      className="w-full mt-2 rounded-lg bg-primary hover:bg-primary/90" 
-                      onClick={handleLogin}
+                      className="w-full"
+                      onClick={() => {
+                        setIsLoggedIn(true);
+                        toast({
+                          title: t('loginSuccess'),
+                          duration: 3000,
+                        });
+                      }}
                     >
-                      <LogIn className="mr-2 h-4 w-4" />
                       {t('login')}
                     </Button>
+                    <div className="flex items-center gap-2 mt-3 p-2 rounded-lg bg-primary/5 border border-primary/10">
+                      <Info className="h-4 w-4 text-primary flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        登入後即可使用雲端儲存和家庭共享功能
+                      </p>
+                    </div>
                   </TabsContent>
                   
-                  <TabsContent value="signup" className="space-y-4">
+                  <TabsContent value="signup" className="space-y-4 pt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name-signup" className="text-sm">{t('name')}</Label>
-                      <Input 
-                        id="name-signup" 
-                        className="bg-muted/40 border-muted rounded-lg" 
-                        placeholder={t('yourName')}
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                      />
+                      <Label htmlFor="signup-name">{t('yourName')}</Label>
+                      <Input id="signup-name" placeholder="John Doe" />
                     </div>
-                    
                     <div className="space-y-2">
-                      <Label htmlFor="email-signup" className="text-sm">{t('email')}</Label>
-                      <div className="flex items-center">
-                        <Mail className="absolute ml-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="email-signup" 
-                          type="email" 
-                          className="pl-10 bg-muted/40 border-muted rounded-lg" 
-                          placeholder="user@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                        />
-                      </div>
+                      <Label htmlFor="signup-email">{t('email')}</Label>
+                      <Input id="signup-email" type="email" placeholder="your.email@example.com" />
                     </div>
-                    
                     <div className="space-y-2">
-                      <Label htmlFor="password-signup" className="text-sm">{t('password')}</Label>
-                      <Input 
-                        id="password-signup" 
-                        type="password" 
-                        className="bg-muted/40 border-muted rounded-lg" 
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
+                      <Label htmlFor="signup-password">{t('password')}</Label>
+                      <Input id="signup-password" type="password" />
                     </div>
-                    
                     <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="text-sm">{t('confirmPassword')}</Label>
-                      <Input 
-                        id="confirm-password" 
-                        type="password" 
-                        className="bg-muted/40 border-muted rounded-lg" 
-                        placeholder="••••••••"
-                        value={passwordConfirm}
-                        onChange={(e) => setPasswordConfirm(e.target.value)}
-                      />
+                      <Label htmlFor="confirm-password">{t('confirmPassword')}</Label>
+                      <Input id="confirm-password" type="password" />
                     </div>
-                    
-                    <Button className="w-full mt-2 rounded-lg" onClick={handleSignup}>
-                      <UserPlus className="mr-2 h-4 w-4" />
+                    <Button 
+                      className="w-full"
+                      onClick={() => {
+                        setIsLoggedIn(true);
+                        toast({
+                          title: t('signupSuccess'),
+                          duration: 3000,
+                        });
+                      }}
+                    >
                       {t('signup')}
                     </Button>
+                    <div className="flex items-center gap-2 mt-3 p-2 rounded-lg bg-primary/5 border border-primary/10">
+                      <Info className="h-4 w-4 text-primary flex-shrink-0" />
+                      <p className="text-xs text-muted-foreground">
+                        登入後即可使用雲端儲存和家庭共享功能
+                      </p>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>
             )}
           </CardContent>
         </Card>
+        
+        {/* 雲端儲存和家庭共享（僅對已登入用戶顯示） */}
+        {isLoggedIn && (
+          <>
+            {/* 家庭共享卡片 */}
+            <Card className="overflow-hidden border-none shadow-sm">
+              <CardHeader className="bg-whatsleft-blue/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-whatsleft-blue" />
+                  <div>
+                    <CardTitle className="text-whatsleft-blue">{t('familySharing')}</CardTitle>
+                    <CardDescription className="text-whatsleft-blue/70">
+                      {t('familySharingDescription')}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                {/* 共享鏈接生成 */}
+                <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                  <h3 className="text-sm font-medium">{t('createFamilyGroup')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('familyGroupDescription')}</p>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
+                    onClick={() => {
+                      // 創建家庭群組功能
+                      toast({
+                        title: t('comingSoon'),
+                        description: t('featureInDevelopment'),
+                        duration: 3000,
+                      });
+                    }}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    {t('createFamilyGroup')}
+                  </Button>
+                </div>
+                
+                {/* 加入共享 */}
+                <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                  <h3 className="text-sm font-medium">{t('joinFamilyGroup')}</h3>
+                  <div className="flex gap-2">
+                    <Input 
+                      className="flex-1 bg-background/50" 
+                      placeholder={t('enterInviteCode')}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
+                      onClick={() => {
+                        // 加入家庭群組功能
+                        toast({
+                          title: t('comingSoon'),
+                          description: t('featureInDevelopment'),
+                          duration: 3000,
+                        });
+                      }}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* 雲端儲存卡片 */}
+            <Card className="overflow-hidden border-none shadow-sm">
+              <CardHeader className="bg-whatsleft-yellow/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <Cloud className="h-5 w-5 text-whatsleft-yellow" />
+                  <div>
+                    <CardTitle className="text-whatsleft-yellow">{t('cloudStorage')}</CardTitle>
+                    <CardDescription className="text-whatsleft-yellow/70">
+                      {t('cloudStorageDescription')}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                {/* 雲端儲存選項 */}
+                <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                  <h3 className="text-sm font-medium">{t('chooseStorage')}</h3>
+                  <Select 
+                    value={cloudProvider} 
+                    onValueChange={(value) => handleCloudStorage(value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('chooseStorage')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="google">Google Drive</SelectItem>
+                      <SelectItem value="onedrive">OneDrive</SelectItem>
+                      <SelectItem value="dropbox">Dropbox</SelectItem>
+                      <SelectItem value="apple">iCloud</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {loadingApi && (
+                    <div className="flex justify-center py-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-whatsleft-yellow border-t-transparent rounded-full" />
+                    </div>
+                  )}
+                  
+                  {cloudProvider && !loadingApi && (
+                    <div className="flex justify-between gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 text-sm flex items-center justify-center gap-1 hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow transition-colors"
+                        onClick={handleSaveToCloud}
+                      >
+                        <FileDown className="h-4 w-4" />
+                        {t('backup')}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="flex-1 text-sm flex items-center justify-center gap-1 hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow transition-colors"
+                        onClick={handleLoadFromCloud}
+                      >
+                        <FileUp className="h-4 w-4" />
+                        {t('restore')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
         
         {/* About卡片 - 最不常用的功能放在最底部 */}
         <Card className="overflow-hidden border-none shadow-sm">

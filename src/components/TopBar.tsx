@@ -11,6 +11,7 @@ import { useTranslation } from '@/utils/translations';
 import Notifications from './Notifications';
 import SortMenu from './SortMenu';
 import ExpiryFilterMenu from './ExpiryFilterMenu';
+import '@fontsource/montserrat';
 
 const TopBar: React.FC = () => {
   const location = useLocation();
@@ -33,20 +34,32 @@ const TopBar: React.FC = () => {
   const getTitleColor = () => {
     switch (location.pathname) {
       case '/':
-        return 'text-primary';
+        return '#F97316'; // 橙色
       case '/stats':
-        return 'text-whatsleft-green';
+        return '#22C55E'; // 綠色
       case '/settings':
-        return 'text-whatsleft-orange';
+        return '#F97316'; // 橙色，與首頁一致
       default:
-        return 'text-primary';
+        return '#F97316';
     }
   };
   
   return (
     <div className="sticky top-0 z-30 bg-background shadow-sm">
       <div className="max-w-md mx-auto flex h-16 items-center justify-between px-4">
-        <h1 className={`text-xl font-bold ${getTitleColor()}`}>{getTitle()}</h1>
+        <div className="flex items-center">
+          <h1 
+            className="text-2xl font-bold font-montserrat"
+            style={{
+              WebkitTextStroke: `1.5px ${getTitleColor()}`,
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '0.5px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}
+          >
+            {getTitle()}
+          </h1>
+        </div>
         {location.pathname === '/' && (
           <div className="flex items-center space-x-1">
             <ExpiryFilterMenu />
