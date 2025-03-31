@@ -5,7 +5,6 @@ import { PlusIcon } from 'lucide-react';
 import ItemCard from '@/components/ItemCard';
 import ItemModal from '@/components/ItemModal';
 import ItemForm from '@/components/ItemForm';
-import SortFilterBar from '@/components/SortFilterBar';
 import { useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
@@ -28,7 +27,16 @@ const Dashboard: React.FC = () => {
   
   const filteredItems = items.filter(item => {
     if (filter === 'All') return true;
-    return item.category === filter;
+    if (filter === 'Food' || filter === 'Household') return item.category === filter;
+    if (filter === 'Expiring') {
+      const daysUntil = calculateDaysUntilExpiry(item.expiryDate);
+      return daysUntil >= 0 && daysUntil <= 4; // Items expiring in 4 days or less
+    }
+    if (filter === 'Expired') {
+      const daysUntil = calculateDaysUntilExpiry(item.expiryDate);
+      return daysUntil < 0; // Already expired items
+    }
+    return true;
   });
   
   const sortedItems = [...filteredItems].sort((a, b) => {
@@ -43,8 +51,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <SortFilterBar />
-      
       {sortedItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground mb-4">{t('noItems')}</p>

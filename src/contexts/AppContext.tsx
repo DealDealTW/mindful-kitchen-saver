@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { addDays, differenceInDays, parseISO, format } from 'date-fns';
 
 export type ItemCategory = 'Food' | 'Household';
+export type FilterType = 'All' | 'Food' | 'Household' | 'Expiring' | 'Expired';
 
 export interface Item {
   id: string;
@@ -20,8 +21,8 @@ interface AppContextType {
   addItem: (item: Omit<Item, 'id' | 'dateAdded'>) => void;
   updateItem: (id: string, item: Partial<Item>) => void;
   deleteItem: (id: string) => void;
-  filter: 'All' | 'Food' | 'Household';
-  setFilter: (filter: 'All' | 'Food' | 'Household') => void;
+  filter: FilterType;
+  setFilter: (filter: FilterType) => void;
   sort: 'name' | 'expiry' | 'added';
   setSort: (sort: 'name' | 'expiry' | 'added') => void;
   darkMode: boolean;
@@ -60,7 +61,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return savedItems ? JSON.parse(savedItems) : [];
   });
   
-  const [filter, setFilter] = useState<'All' | 'Food' | 'Household'>('All');
+  const [filter, setFilter] = useState<FilterType>('All');
   const [sort, setSort] = useState<'name' | 'expiry' | 'added'>('expiry');
   const [darkMode, setDarkMode] = useState<boolean>(() => {
     const savedDarkMode = localStorage.getItem('whatsleftDarkMode');

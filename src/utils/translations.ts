@@ -1,4 +1,3 @@
-
 export const translations = {
   'en': {
     appName: 'WhatsLeft',
@@ -8,6 +7,7 @@ export const translations = {
     all: 'All',
     food: 'Food',
     household: 'Household',
+    filter: 'Filter',
     sortBy: 'Sort By',
     name: 'Name',
     expiryDate: 'Expiry Date',
@@ -29,8 +29,8 @@ export const translations = {
     english: 'English',
     traditionalChinese: '繁體中文',
     simplifiedChinese: '简体中文',
-    expiring: 'expiring',
-    expired: 'expired',
+    expiring: 'Expiring',
+    expired: 'Expired',
     expiringItems: 'Expiring Items',
     noItems: 'No items found',
     noExpiringItems: 'No expiring items',
@@ -61,6 +61,7 @@ export const translations = {
     all: '全部',
     food: '食物',
     household: '家居',
+    filter: '篩選',
     sortBy: '排序',
     name: '名稱',
     expiryDate: '到期日',
@@ -114,6 +115,7 @@ export const translations = {
     all: '全部',
     food: '食物',
     household: '家居',
+    filter: '筛选',
     sortBy: '排序',
     name: '名称',
     expiryDate: '到期日',

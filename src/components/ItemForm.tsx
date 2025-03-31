@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { format, addDays } from 'date-fns';
-import { CalendarIcon, UtensilsIcon, ShoppingBasketIcon } from 'lucide-react';
+import { CalendarIcon, Apple, ShoppingBasketIcon } from 'lucide-react';
 import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -46,7 +46,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
   const [daysUntilExpiry, setDaysUntilExpiry] = useState(6);
   const [notifyDaysBefore, setNotifyDaysBefore] = useState(2);
   const [isUsingDays, setIsUsingDays] = useState(true);
-
+  
   useEffect(() => {
     if (editItem) {
       setName(editItem.name);
@@ -128,12 +128,15 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="quantity">{t('quantity')}</Label>
-              <Input 
-                id="quantity" 
-                value={quantity} 
-                onChange={(e) => setQuantity(e.target.value)} 
-                placeholder="e.g., 1 box, 2L..."
-              />
+              <div className="flex items-center">
+                <span className="mr-2">×</span>
+                <Input 
+                  id="quantity" 
+                  value={quantity} 
+                  onChange={(e) => setQuantity(e.target.value)} 
+                  placeholder="e.g., 1, 2L..."
+                />
+              </div>
             </div>
             
             <div className="grid gap-2">
@@ -145,8 +148,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   className="flex-1"
                   onClick={() => setCategory('Food')}
                 >
-                  <UtensilsIcon className="mr-2 h-4 w-4" />
-                  {t('food')}
+                  <Apple className="h-4 w-4" />
                 </Button>
                 <Button
                   type="button"
@@ -154,8 +156,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   className="flex-1"
                   onClick={() => setCategory('Household')}
                 >
-                  <ShoppingBasketIcon className="mr-2 h-4 w-4" />
-                  {t('household')}
+                  <ShoppingBasketIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -195,12 +196,13 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                     {expiryDate ? format(expiryDate, 'PPP') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={expiryDate}
                     onSelect={handleDateChange}
                     initialFocus
+                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
