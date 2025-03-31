@@ -345,14 +345,264 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-md mx-auto px-4 py-6 pb-16">
       <div className="space-y-6">
-        {/* 用戶帳戶卡片 */}
+        {/* 外觀設定卡片 - 最常用的設置放在最上面 */}
         <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-purple/10 pb-3">
+          <CardHeader className="bg-whatsleft-orange/10 pb-3">
             <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-whatsleft-purple" />
+              <Paintbrush className="h-5 w-5 text-whatsleft-orange" />
               <div>
-                <CardTitle className="text-whatsleft-purple">{t('account')}</CardTitle>
-                <CardDescription className="text-whatsleft-purple/70">
+                <CardTitle className="text-whatsleft-orange">{t('appearance')}</CardTitle>
+                <CardDescription className="text-whatsleft-orange/70">
+                  {t('appearanceDescription')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="flex items-center justify-between bg-muted/40 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Moon className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="dark-mode" className="font-medium cursor-pointer">{t('darkMode')}</Label>
+              </div>
+              <Switch
+                id="dark-mode"
+                checked={darkMode}
+                onCheckedChange={setDarkMode}
+                className="data-[state=checked]:bg-whatsleft-orange"
+              />
+            </div>
+            
+            <div className="bg-muted/40 p-3 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 mb-3">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="language-select" className="font-medium">{t('language')}</Label>
+              </div>
+              <Select 
+                value={language} 
+                onValueChange={(value) => setLanguage(value as SupportedLanguage)}
+              >
+                <SelectTrigger id="language-select">
+                  <SelectValue placeholder={t('selectLanguage')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="zh-TW">繁體中文</SelectItem>
+                  <SelectItem value="zh-CN">简体中文</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* 默認設置卡片 - 放在第二位，因為使用者經常設定默認值 */}
+        <Card className="overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-whatsleft-green/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Sliders className="h-5 w-5 text-whatsleft-green" />
+              <div>
+                <CardTitle className="text-whatsleft-green">{t('defaultSettings')}</CardTitle>
+                <CardDescription className="text-whatsleft-green/70">
+                  {t('defaultSettingsDescription')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="bg-muted/40 p-3 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="default-expiry" className="font-medium">{t('defaultExpiryDays')}</Label>
+              </div>
+              <div className="flex items-center">
+                <Input 
+                  id="default-expiry"
+                  type="number" 
+                  min="1" 
+                  max="365" 
+                  value={settings.defaultExpiryDays.toString()} 
+                  onChange={(e) => updateSettings({ defaultExpiryDays: parseInt(e.target.value) || 7 })}
+                  className="w-full"
+                />
+                <span className="ml-2 text-sm text-muted-foreground">{t('days')}</span>
+              </div>
+            </div>
+            
+            <div className="bg-muted/40 p-3 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="default-notify" className="font-medium">{t('defaultNotifyDays')}</Label>
+              </div>
+              <div className="flex items-center">
+                <Input 
+                  id="default-notify"
+                  type="number" 
+                  min="0" 
+                  max="30" 
+                  value={settings.defaultNotifyDays.toString()} 
+                  onChange={(e) => updateSettings({ defaultNotifyDays: parseInt(e.target.value) || 2 })}
+                  className="w-full"
+                />
+                <span className="ml-2 text-sm text-muted-foreground">{t('days')}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* 數據管理卡片 - 常用的數據管理功能 */}
+        <Card className="overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-whatsleft-blue/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-whatsleft-blue" />
+              <div>
+                <CardTitle className="text-whatsleft-blue">{t('dataManagement')}</CardTitle>
+                <CardDescription className="text-whatsleft-blue/70">
+                  {t('dataManagementDescription')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            {/* 文件系統直接訪問 */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadBackup}
+                className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
+              >
+                <FileDown className="h-4 w-4" />
+                {t('downloadBackup')}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleUploadBackup}
+                className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
+              >
+                <FileUp className="h-4 w-4" />
+                {t('uploadBackup')}
+              </Button>
+            </div>
+            
+            {/* 危險操作放在底部 */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2 mt-2 text-whatsleft-red hover:bg-whatsleft-red/10 hover:text-whatsleft-red transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {t('resetData')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('resetData')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('resetConfirmation')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetData} className="bg-whatsleft-red hover:bg-whatsleft-red/90">{t('delete')}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
+        
+        {/* 雲端儲存卡片 */}
+        <Card className="overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-whatsleft-yellow/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Cloud className="h-5 w-5 text-whatsleft-yellow" />
+              <div>
+                <CardTitle className="text-whatsleft-yellow">{t('cloudStorage')}</CardTitle>
+                <CardDescription className="text-whatsleft-yellow/70">
+                  {t('cloudStorageDescription')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            {/* 雲端儲存選項 */}
+            <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+              <h3 className="text-sm font-medium">{t('chooseStorage')}</h3>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant={cloudProvider === 'google' ? "default" : "outline"} 
+                  className={`w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2 ${cloudProvider === 'google' ? 'bg-whatsleft-yellow text-background hover:bg-whatsleft-yellow/90' : 'hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow'}`}
+                  disabled={!!loadingApi}
+                  onClick={() => handleCloudStorage('google')}
+                >
+                  {loadingApi === 'google' ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : (
+                    <ExternalLink className="h-5 w-5" />
+                  )}
+                  <span>{t('googleDrive')}</span>
+                </Button>
+                
+                <Button 
+                  variant={cloudProvider === 'onedrive' ? "default" : "outline"} 
+                  className={`w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2 ${cloudProvider === 'onedrive' ? 'bg-whatsleft-yellow text-background hover:bg-whatsleft-yellow/90' : 'hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow'}`}
+                  disabled={!!loadingApi}
+                  onClick={() => handleCloudStorage('onedrive')}
+                >
+                  {loadingApi === 'onedrive' ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : (
+                    <ExternalLink className="h-5 w-5" />
+                  )}
+                  <span>{t('oneDrive')}</span>
+                </Button>
+                
+                <Button 
+                  variant={cloudProvider === 'dropbox' ? "default" : "outline"} 
+                  className={`w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2 ${cloudProvider === 'dropbox' ? 'bg-whatsleft-yellow text-background hover:bg-whatsleft-yellow/90' : 'hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow'}`}
+                  disabled={!!loadingApi}
+                  onClick={() => handleCloudStorage('dropbox')}
+                >
+                  {loadingApi === 'dropbox' ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : (
+                    <ExternalLink className="h-5 w-5" />
+                  )}
+                  <span>{t('dropbox')}</span>
+                </Button>
+              </div>
+              
+              {cloudProvider && (
+                <div className="flex justify-between gap-2 mt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 text-xs flex items-center justify-center gap-1 hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow transition-colors"
+                    onClick={handleSaveToCloud}
+                  >
+                    <Download className="h-4 w-4" />
+                    {t('saveToCloud')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 text-xs flex items-center justify-center gap-1 hover:bg-whatsleft-yellow/10 hover:text-whatsleft-yellow transition-colors"
+                    onClick={handleLoadFromCloud}
+                  >
+                    <Upload className="h-4 w-4" />
+                    {t('loadFromCloud')}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* 用戶帳戶卡片 - 進階功能，放在後面 */}
+        <Card className="overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-primary/10 pb-3">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle className="text-primary">{t('account')}</CardTitle>
+                <CardDescription className="text-primary/70">
                   {t('accountDescription')}
                 </CardDescription>
               </div>
@@ -371,7 +621,7 @@ const Settings: React.FC = () => {
                       variant="outline" 
                       size="sm"
                       onClick={handleLogout}
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 hover:bg-primary/10 hover:text-primary transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
                       {t('logout')}
@@ -382,10 +632,16 @@ const Settings: React.FC = () => {
                 <div className="bg-muted/40 p-4 rounded-lg space-y-3">
                   <h3 className="text-sm font-medium">{t('syncData')}</h3>
                   <div className="flex justify-between gap-2">
-                    <Button variant="outline" className="flex-1 text-sm">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 text-sm hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
                       {t('syncToCloud')}
                     </Button>
-                    <Button variant="outline" className="flex-1 text-sm">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1 text-sm hover:bg-primary/10 hover:text-primary transition-colors"
+                    >
                       {t('syncFromCloud')}
                     </Button>
                   </div>
@@ -428,7 +684,10 @@ const Settings: React.FC = () => {
                       />
                     </div>
                     
-                    <Button className="w-full mt-2 rounded-lg" onClick={handleLogin}>
+                    <Button 
+                      className="w-full mt-2 rounded-lg bg-primary hover:bg-primary/90" 
+                      onClick={handleLogin}
+                    >
                       <LogIn className="mr-2 h-4 w-4" />
                       {t('login')}
                     </Button>
@@ -495,262 +754,13 @@ const Settings: React.FC = () => {
             )}
           </CardContent>
         </Card>
-      
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-primary/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Paintbrush className="h-5 w-5 text-primary" />
-              <div>
-                <CardTitle className="text-primary">{t('appearance')}</CardTitle>
-                <CardDescription className="text-primary/70">
-                  {t('appearanceDescription')}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <div className="flex items-center justify-between bg-muted/40 p-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Moon className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="dark-mode" className="font-medium cursor-pointer">{t('darkMode')}</Label>
-              </div>
-              <Switch
-                id="dark-mode"
-                checked={darkMode}
-                onCheckedChange={setDarkMode}
-                className="data-[state=checked]:bg-primary"
-              />
-            </div>
-            
-            <div className="bg-muted/40 p-3 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 mb-3">
-                <Globe className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="language-select" className="font-medium">{t('language')}</Label>
-              </div>
-              <Select 
-                value={language} 
-                onValueChange={(value) => setLanguage(value as SupportedLanguage)}
-              >
-                <SelectTrigger id="language-select">
-                  <SelectValue placeholder={t('selectLanguage')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="zh-TW">繁體中文</SelectItem>
-                  <SelectItem value="zh-CN">简体中文</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
         
-        {/* 默認設置卡片 */}
+        {/* About卡片 - 最不常用的功能放在最底部 */}
         <Card className="overflow-hidden border-none shadow-sm">
           <CardHeader className="bg-whatsleft-green/10 pb-3">
             <div className="flex items-center gap-2">
-              <Sliders className="h-5 w-5 text-whatsleft-green" />
-              <div>
-                <CardTitle className="text-whatsleft-green">{t('defaultSettings')}</CardTitle>
-                <CardDescription className="text-whatsleft-green/70">
-                  {t('defaultSettingsDescription')}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <div className="bg-muted/40 p-3 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="default-expiry" className="font-medium">{t('defaultExpiryDays')}</Label>
-              </div>
-              <div className="flex items-center">
-                <Input 
-                  id="default-expiry"
-                  type="number" 
-                  min="1" 
-                  max="365" 
-                  value={settings.defaultExpiryDays.toString()} 
-                  onChange={(e) => updateSettings({ defaultExpiryDays: parseInt(e.target.value) || 7 })}
-                  className="w-full"
-                />
-                <span className="ml-2 text-sm text-muted-foreground">{t('days')}</span>
-              </div>
-            </div>
-            
-            <div className="bg-muted/40 p-3 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="default-notify" className="font-medium">{t('defaultNotifyDays')}</Label>
-              </div>
-              <div className="flex items-center">
-                <Input 
-                  id="default-notify"
-                  type="number" 
-                  min="0" 
-                  max="30" 
-                  value={settings.defaultNotifyDays.toString()} 
-                  onChange={(e) => updateSettings({ defaultNotifyDays: parseInt(e.target.value) || 2 })}
-                  className="w-full"
-                />
-                <span className="ml-2 text-sm text-muted-foreground">{t('days')}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* 雲端儲存卡片 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-blue/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Cloud className="h-5 w-5 text-whatsleft-blue" />
-              <div>
-                <CardTitle className="text-whatsleft-blue">{t('cloudStorage')}</CardTitle>
-                <CardDescription className="text-whatsleft-blue/70">
-                  {t('cloudStorageDescription')}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            {/* 文件系統直接訪問 */}
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
-                onClick={handleDownloadBackup}
-                className="w-full flex items-center justify-center gap-2"
-              >
-                <FileDown className="h-4 w-4" />
-                {t('downloadBackup')}
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={handleUploadBackup}
-                className="w-full flex items-center justify-center gap-2"
-              >
-                <FileUp className="h-4 w-4" />
-                {t('uploadBackup')}
-              </Button>
-            </div>
-            
-            {/* 雲端儲存選項 */}
-            <div className="bg-muted/40 p-3 rounded-lg space-y-3">
-              <h3 className="text-sm font-medium">{t('chooseStorage')}</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  variant={cloudProvider === 'google' ? "default" : "outline"} 
-                  className="w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2"
-                  disabled={!!loadingApi}
-                  onClick={() => handleCloudStorage('google')}
-                >
-                  {loadingApi === 'google' ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5" />
-                  )}
-                  <span>{t('googleDrive')}</span>
-                </Button>
-                
-                <Button 
-                  variant={cloudProvider === 'onedrive' ? "default" : "outline"} 
-                  className="w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2"
-                  disabled={!!loadingApi}
-                  onClick={() => handleCloudStorage('onedrive')}
-                >
-                  {loadingApi === 'onedrive' ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5" />
-                  )}
-                  <span>{t('oneDrive')}</span>
-                </Button>
-                
-                <Button 
-                  variant={cloudProvider === 'dropbox' ? "default" : "outline"} 
-                  className="w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2"
-                  disabled={!!loadingApi}
-                  onClick={() => handleCloudStorage('dropbox')}
-                >
-                  {loadingApi === 'dropbox' ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                  ) : (
-                    <ExternalLink className="h-5 w-5" />
-                  )}
-                  <span>{t('dropbox')}</span>
-                </Button>
-              </div>
-              
-              {cloudProvider && (
-                <div className="flex justify-between gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 text-xs flex items-center justify-center gap-1"
-                    onClick={handleSaveToCloud}
-                  >
-                    <Download className="h-4 w-4" />
-                    {t('saveToCloud')}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 text-xs flex items-center justify-center gap-1"
-                    onClick={handleLoadFromCloud}
-                  >
-                    <Upload className="h-4 w-4" />
-                    {t('loadFromCloud')}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* 數據管理卡片 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-red/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-whatsleft-red" />
-              <div>
-                <CardTitle className="text-whatsleft-red">{t('dataManagement')}</CardTitle>
-                <CardDescription className="text-whatsleft-red/70">
-                  {t('dataManagementDescription')}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            {/* 重置數據按鈕 */}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="destructive" 
-                  className="w-full flex items-center justify-center gap-2 mt-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t('resetData')}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('resetData')}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t('resetConfirmation')}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                  <AlertDialogAction onClick={resetData}>{t('delete')}</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
-        
-        {/* About卡片 */}
-        <Card className="overflow-hidden border-none shadow-sm">
-          <CardHeader className="bg-whatsleft-orange/10 pb-3">
-            <div className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-whatsleft-orange" />
-              <CardTitle className="text-whatsleft-orange">{t('about')}</CardTitle>
+              <Info className="h-5 w-5 text-whatsleft-green" />
+              <CardTitle className="text-whatsleft-green">{t('about')}</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-4 space-y-3">
