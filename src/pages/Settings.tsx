@@ -36,7 +36,11 @@ import {
   LogIn,
   LogOut,
   UserPlus,
-  Mail
+  Mail,
+  Cloud,
+  FileDown,
+  FileUp,
+  ExternalLink
 } from 'lucide-react';
 import { useApp, ItemCategory } from '@/contexts/AppContext';
 import { useTranslation, SupportedLanguage } from '@/utils/translations';
@@ -68,6 +72,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/use-toast";
+import { 
+  saveDataToFile, 
+  loadDataFromFile, 
+  initGoogleDriveApi, 
+  saveToGoogleDrive, 
+  loadFromGoogleDrive,
+  initOneDriveApi,
+  saveToOneDrive,
+  loadFromOneDrive,
+  initDropboxApi,
+  saveToDropbox,
+  loadFromDropbox
+} from '../utils/CloudStorage';
 
 const Settings: React.FC = () => {
   const { darkMode, setDarkMode, language, setLanguage, settings, updateSettings, exportData, importData } = useApp();
@@ -82,6 +99,10 @@ const Settings: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [passwordConfirm, setPasswordConfirm] = useState<string>("");
   const [name, setName] = useState<string>("");
+  
+  // 雲端儲存狀態
+  const [loadingApi, setLoadingApi] = useState<string | null>(null);
+  const [cloudProvider, setCloudProvider] = useState<string>("");
   
   // 處理導出數據
   const handleExport = () => {
@@ -171,6 +192,154 @@ const Settings: React.FC = () => {
       title: t('logoutSuccess'),
       duration: 3000,
     });
+  };
+  
+  // 下載備份文件
+  const handleDownloadBackup = async () => {
+    const data = exportData();
+    const success = await saveDataToFile(data, 'household-harbor-backup.json');
+    if (success) {
+      toast({
+        title: t('exportSuccess'),
+        duration: 3000,
+      });
+    } else {
+      toast({
+        title: t('fileSystemNotSupported'),
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+  
+  // 上傳備份文件
+  const handleUploadBackup = async () => {
+    const data = await loadDataFromFile();
+    if (data) {
+      const success = importData(data);
+      if (success) {
+        toast({
+          title: t('importSuccess'),
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: t('importError'),
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    }
+  };
+  
+  // 處理雲端儲存
+  const handleCloudStorage = async (provider: string) => {
+    setLoadingApi(provider);
+    
+    try {
+      let apiInitialized = false;
+      
+      // 初始化API
+      switch (provider) {
+        case 'google':
+          apiInitialized = await initGoogleDriveApi();
+          break;
+        case 'onedrive':
+          apiInitialized = await initOneDriveApi();
+          break;
+        case 'dropbox':
+          apiInitialized = await initDropboxApi();
+          break;
+      }
+      
+      if (apiInitialized) {
+        setCloudProvider(provider);
+      } else {
+        toast({
+          title: `Failed to initialize ${provider}`,
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error(`Error initializing ${provider}:`, error);
+    } finally {
+      setLoadingApi(null);
+    }
+  };
+  
+  // 保存到雲端
+  const handleSaveToCloud = async () => {
+    if (!cloudProvider) {
+      toast({
+        title: t('chooseStorage'),
+        duration: 3000,
+      });
+      return;
+    }
+    
+    const data = exportData();
+    let success = false;
+    
+    switch (cloudProvider) {
+      case 'google':
+        success = await saveToGoogleDrive(data, 'household-harbor-backup.json');
+        break;
+      case 'onedrive':
+        success = await saveToOneDrive(data, 'household-harbor-backup.json');
+        break;
+      case 'dropbox':
+        success = await saveToDropbox(data, 'household-harbor-backup.json');
+        break;
+    }
+    
+    if (success) {
+      toast({
+        title: t('exportSuccess'),
+        duration: 3000,
+      });
+    }
+  };
+  
+  // 從雲端加載
+  const handleLoadFromCloud = async () => {
+    if (!cloudProvider) {
+      toast({
+        title: t('chooseStorage'),
+        duration: 3000,
+      });
+      return;
+    }
+    
+    let data = null;
+    
+    switch (cloudProvider) {
+      case 'google':
+        data = await loadFromGoogleDrive();
+        break;
+      case 'onedrive':
+        data = await loadFromOneDrive();
+        break;
+      case 'dropbox':
+        data = await loadFromDropbox();
+        break;
+    }
+    
+    if (data) {
+      const success = importData(data);
+      if (success) {
+        toast({
+          title: t('importSuccess'),
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: t('importError'),
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    }
   };
 
   return (
@@ -429,97 +598,126 @@ const Settings: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* 數據管理卡片 */}
+        {/* 雲端儲存卡片 */}
         <Card className="overflow-hidden border-none shadow-sm">
           <CardHeader className="bg-whatsleft-blue/10 pb-3">
             <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-whatsleft-blue" />
+              <Cloud className="h-5 w-5 text-whatsleft-blue" />
               <div>
-                <CardTitle className="text-whatsleft-blue">{t('dataManagement')}</CardTitle>
+                <CardTitle className="text-whatsleft-blue">{t('cloudStorage')}</CardTitle>
                 <CardDescription className="text-whatsleft-blue/70">
+                  {t('cloudStorageDescription')}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            {/* 文件系統直接訪問 */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadBackup}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <FileDown className="h-4 w-4" />
+                {t('downloadBackup')}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleUploadBackup}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <FileUp className="h-4 w-4" />
+                {t('uploadBackup')}
+              </Button>
+            </div>
+            
+            {/* 雲端儲存選項 */}
+            <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+              <h3 className="text-sm font-medium">{t('chooseStorage')}</h3>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant={cloudProvider === 'google' ? "default" : "outline"} 
+                  className="w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2"
+                  disabled={!!loadingApi}
+                  onClick={() => handleCloudStorage('google')}
+                >
+                  {loadingApi === 'google' ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : (
+                    <ExternalLink className="h-5 w-5" />
+                  )}
+                  <span>{t('googleDrive')}</span>
+                </Button>
+                
+                <Button 
+                  variant={cloudProvider === 'onedrive' ? "default" : "outline"} 
+                  className="w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2"
+                  disabled={!!loadingApi}
+                  onClick={() => handleCloudStorage('onedrive')}
+                >
+                  {loadingApi === 'onedrive' ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : (
+                    <ExternalLink className="h-5 w-5" />
+                  )}
+                  <span>{t('oneDrive')}</span>
+                </Button>
+                
+                <Button 
+                  variant={cloudProvider === 'dropbox' ? "default" : "outline"} 
+                  className="w-full text-xs flex flex-col items-center justify-center gap-1 h-auto py-2"
+                  disabled={!!loadingApi}
+                  onClick={() => handleCloudStorage('dropbox')}
+                >
+                  {loadingApi === 'dropbox' ? (
+                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : (
+                    <ExternalLink className="h-5 w-5" />
+                  )}
+                  <span>{t('dropbox')}</span>
+                </Button>
+              </div>
+              
+              {cloudProvider && (
+                <div className="flex justify-between gap-2 mt-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 text-xs flex items-center justify-center gap-1"
+                    onClick={handleSaveToCloud}
+                  >
+                    <Download className="h-4 w-4" />
+                    {t('saveToCloud')}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 text-xs flex items-center justify-center gap-1"
+                    onClick={handleLoadFromCloud}
+                  >
+                    <Upload className="h-4 w-4" />
+                    {t('loadFromCloud')}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* 數據管理卡片 */}
+        <Card className="overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-whatsleft-red/10 pb-3">
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-whatsleft-red" />
+              <div>
+                <CardTitle className="text-whatsleft-red">{t('dataManagement')}</CardTitle>
+                <CardDescription className="text-whatsleft-red/70">
                   {t('dataManagementDescription')}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              {/* 導出數據按鈕 */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleExport}
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    {t('exportData')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>{t('exportData')}</DialogTitle>
-                    <DialogDescription>
-                      {t('dataManagementDescription')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="flex items-center space-x-2">
-                    <div className="grid flex-1 gap-2">
-                      <textarea 
-                        className="min-h-[150px] flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" 
-                        value={exportValue} 
-                        readOnly
-                      />
-                    </div>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button type="button" size="sm" onClick={copyToClipboard} variant="outline">
-                            {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{copySuccess ? t('copied') : t('copyToClipboard')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </DialogContent>
-              </Dialog>
-              
-              {/* 導入數據按鈕 */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <Upload className="h-4 w-4" />
-                    {t('importData')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>{t('importData')}</DialogTitle>
-                    <DialogDescription>
-                      {t('dataManagementDescription')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4">
-                    <textarea 
-                      className="min-h-[150px] flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" 
-                      value={importValue} 
-                      onChange={(e) => setImportValue(e.target.value)}
-                      placeholder="Paste your exported data here..."
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleImport}>{t('importData')}</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-            
             {/* 重置數據按鈕 */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -547,6 +745,7 @@ const Settings: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* About卡片 */}
         <Card className="overflow-hidden border-none shadow-sm">
           <CardHeader className="bg-whatsleft-orange/10 pb-3">
             <div className="flex items-center gap-2">
