@@ -50,8 +50,8 @@ const Dashboard: React.FC = () => {
   });
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4 pb-16">
-      <div className="mb-4">
+    <div className="max-w-lg mx-auto px-2 sm:px-4 py-4 pb-16">
+      <div className="mb-3 sm:mb-4">
         <CategoryFilterMenu />
       </div>
       
@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {sortedItems.map(item => (
             <ItemCard key={item.id} item={item} />
           ))}

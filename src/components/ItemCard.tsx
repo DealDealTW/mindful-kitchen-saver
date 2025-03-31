@@ -54,21 +54,21 @@ const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
       className={`relative rounded-xl overflow-hidden shadow-sm animate-fadeIn cursor-pointer transition-all duration-200 hover:shadow-md`}
       onClick={() => setSelectedItem(item)}
     >
-      <div className={`${getExpiryColor()} px-3 py-2`}>
+      <div className={`${getExpiryColor()} px-2 sm:px-3 py-2`}>
         <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
             {getCategoryIcon()}
-            <h3 className="font-medium text-base truncate pr-1">{item.name}</h3>
+            <h3 className="font-medium text-sm sm:text-base truncate">{item.name}</h3>
           </div>
-          <span className="font-medium">x{item.quantity}</span>
+          <span className="font-medium text-sm ml-1">x{item.quantity}</span>
         </div>
       </div>
       
-      <div className="bg-card px-3 py-2 flex justify-between items-center">
-        <span className="text-xs text-muted-foreground">
+      <div className="bg-card px-2 sm:px-3 py-2 flex justify-between items-center">
+        <span className="text-xs text-muted-foreground truncate">
           {format(parseISO(item.expiryDate), 'MMM d, yyyy')}
         </span>
-        <Badge variant="outline" className={`text-xs ${getExpiryColor()} border`}>
+        <Badge variant="outline" className={`text-xs ${getExpiryColor()} border whitespace-nowrap ml-1`}>
           {getExpiryText()}
         </Badge>
       </div>
