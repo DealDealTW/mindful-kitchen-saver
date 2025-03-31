@@ -15,17 +15,12 @@ const Notifications: React.FC = () => {
   const { items, setSelectedItem, language } = useApp();
   const t = useTranslation(language);
   
-  const expiringSoon = items.filter(item => {
+  const notificationItems = items.filter(item => {
     const daysLeft = calculateDaysUntilExpiry(item.expiryDate);
-    return daysLeft <= item.notifyDaysBefore && daysLeft >= 0;
+    return (daysLeft <= item.notifyDaysBefore && daysLeft >= 0) || daysLeft < 0;
   });
   
-  const expired = items.filter(item => {
-    const daysLeft = calculateDaysUntilExpiry(item.expiryDate);
-    return daysLeft < 0;
-  });
-  
-  const totalNotifications = expiringSoon.length + expired.length;
+  const totalNotifications = notificationItems.length;
   
   const NotificationItem = ({ item }: { item: Item }) => {
     const daysLeft = calculateDaysUntilExpiry(item.expiryDate);
@@ -53,7 +48,7 @@ const Notifications: React.FC = () => {
       >
         <div className="flex justify-between">
           <span className="font-medium">{item.name}</span>
-          <span>{item.quantity}</span>
+          <span>×{item.quantity}</span>
         </div>
         <div className={`text-sm ${statusClass}`}>{statusText}</div>
       </div>
@@ -83,23 +78,9 @@ const Notifications: React.FC = () => {
             <p className="text-sm text-muted-foreground">{t('noExpiringItems')}</p>
           ) : (
             <div className="max-h-[300px] overflow-y-auto">
-              {expired.length > 0 && (
-                <div className="mb-2">
-                  <h4 className="text-sm font-medium text-whatsleft-red mb-1">{t('expired')}</h4>
-                  {expired.map(item => (
-                    <NotificationItem key={item.id} item={item} />
-                  ))}
-                </div>
-              )}
-              
-              {expiringSoon.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-whatsleft-orange mb-1">{t('expiring')}</h4>
-                  {expiringSoon.map(item => (
-                    <NotificationItem key={item.id} item={item} />
-                  ))}
-                </div>
-              )}
+              {notificationItems.map(item => (
+                <NotificationItem key={item.id} item={item} />
+              ))}
             </div>
           )}
         </div>

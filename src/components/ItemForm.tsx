@@ -16,16 +16,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { format, addDays } from 'date-fns';
-import { CalendarIcon, Apple, ShoppingBasketIcon } from 'lucide-react';
+import { CalendarIcon, Apple, ShoppingBagIcon } from 'lucide-react';
 import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -156,7 +149,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   className="flex-1"
                   onClick={() => setCategory('Household')}
                 >
-                  <ShoppingBasketIcon className="h-4 w-4" />
+                  <ShoppingBagIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -202,7 +195,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                     selected={expiryDate}
                     onSelect={handleDateChange}
                     initialFocus
-                    className="p-3 pointer-events-auto"
+                    captionLayout="dropdown-buttons"
+                    fromYear={2023}
+                    toYear={2030}
+                    className="p-3"
                   />
                 </PopoverContent>
               </Popover>
@@ -228,7 +224,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                 onValueChange={(value) => setNotifyDaysBefore(value[0])}
                 className="flex-1"
               />
-              <span className="w-12 text-center">{notifyDaysBefore}</span>
+              <span className="w-16 text-center">{notifyDaysBefore} {t('days')}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {t('notifyBeforeDescription')}
             </div>
           </div>
         </div>

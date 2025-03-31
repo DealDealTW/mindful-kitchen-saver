@@ -43,15 +43,16 @@ export const translations = {
     notificationsEnabled: 'Enable Notifications',
     addedOn: 'Added on',
     appearance: 'Appearance',
-    appearanceDescription: 'Customize the look and feel of the app',
-    selectLanguage: 'Select Language',
-    notificationsDescription: 'Control how you receive notifications',
+    appearanceDescription: 'Customize the app appearance',
+    selectLanguage: 'Select language',
+    notificationsDescription: 'Set notification preferences',
     about: 'About',
-    aboutDescription: 'Information about the WhatsLeft app',
-    itemsTracked: 'Items Tracked',
-    expiringSoon: 'Expiring Soon',
-    wastePercentage: 'Waste Percentage',
-    usageStats: 'Usage Stats'
+    aboutDescription: 'Information about this app',
+    itemsTracked: 'Items tracked',
+    expiringSoon: 'Expiring soon',
+    wastePercentage: 'Waste percentage',
+    usageStats: 'Usage stats',
+    notifyBeforeDescription: 'You will be notified this many days before items expire',
   },
   'zh-TW': {
     appName: '剩食追蹤',
@@ -97,15 +98,16 @@ export const translations = {
     notificationsEnabled: '啟用通知',
     addedOn: '添加於',
     appearance: '外觀',
-    appearanceDescription: '自定義應用程序的外觀和感覺',
+    appearanceDescription: '自定義應用外觀',
     selectLanguage: '選擇語言',
-    notificationsDescription: '控制您如何接收通知',
+    notificationsDescription: '設置通知偏好',
     about: '關於',
-    aboutDescription: '有關WhatsLeft應用程序的信息',
-    itemsTracked: '追蹤物品',
-    expiringSoon: '即將到期',
+    aboutDescription: '有關此應用的信息',
+    itemsTracked: '追蹤的物品',
+    expiringSoon: '即將過期',
     wastePercentage: '浪費百分比',
-    usageStats: '使用統計'
+    usageStats: '使用統計',
+    notifyBeforeDescription: '物品到期前將會提前通知您',
   },
   'zh-CN': {
     appName: '剩食追踪',
@@ -159,7 +161,8 @@ export const translations = {
     itemsTracked: '追踪物品',
     expiringSoon: '即将到期',
     wastePercentage: '浪费百分比',
-    usageStats: '使用统计'
+    usageStats: '使用统计',
+    notifyBeforeDescription: '物品到期前将会提前通知您',
   }
 };
 

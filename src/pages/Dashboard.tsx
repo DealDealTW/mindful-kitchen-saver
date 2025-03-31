@@ -8,6 +8,7 @@ import ItemForm from '@/components/ItemForm';
 import { useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
+import FilterMenu from '@/components/FilterMenu';
 
 const Dashboard: React.FC = () => {
   const { items, filter, sort, selectedItem, language } = useApp();
@@ -51,6 +52,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
+      <div className="mb-4">
+        <FilterMenu />
+      </div>
+      
       {sortedItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12">
           <p className="text-muted-foreground mb-4">{t('noItems')}</p>

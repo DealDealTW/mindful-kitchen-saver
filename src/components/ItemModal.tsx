@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ShoppingBasketIcon, UtensilsIcon, CalendarIcon, ClockIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import { ShoppingBagIcon, Apple, CalendarIcon, ClockIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useApp } from '@/contexts/AppContext';
 import { Item } from '@/contexts/AppContext';
@@ -45,13 +45,13 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
           <div className="flex items-center justify-between">
             <span className="flex items-center text-muted-foreground">
               {selectedItem.category === 'Food' ? (
-                <UtensilsIcon className="mr-2 h-5 w-5" />
+                <Apple className="mr-2 h-5 w-5" />
               ) : (
-                <ShoppingBasketIcon className="mr-2 h-5 w-5" />
+                <ShoppingBagIcon className="mr-2 h-5 w-5" />
               )}
               {t(selectedItem.category.toLowerCase() as any)}
             </span>
-            <span className="font-medium">{selectedItem.quantity}</span>
+            <span className="font-medium">×{selectedItem.quantity}</span>
           </div>
           
           <div className="flex items-center text-muted-foreground">
