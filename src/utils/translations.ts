@@ -66,6 +66,12 @@ export const translations = {
     remaining: 'remaining',
     items: 'Items',
     markAsUsed: 'Mark as Used',
+    used: 'Used',
+    wasted: 'Wasted',
+    usageOverview: 'Usage Overview',
+    total: 'Total',
+    efficiency: 'Efficiency',
+    more: 'more',
   },
   'zh-TW': {
     appName: '剩食追蹤',
@@ -134,6 +140,12 @@ export const translations = {
     remaining: '剩餘',
     items: '物品',
     markAsUsed: '標記為已使用',
+    used: '已使用',
+    wasted: '已浪費',
+    usageOverview: '使用概覽',
+    total: '總計',
+    efficiency: '使用效率',
+    more: '更多',
   },
   'zh-CN': {
     appName: '剩食追踪',
@@ -202,6 +214,12 @@ export const translations = {
     remaining: '剩余',
     items: '物品',
     markAsUsed: '标记为已使用',
+    used: '已使用',
+    wasted: '已浪费',
+    usageOverview: '使用概览',
+    total: '总计',
+    efficiency: '使用效率',
+    more: '更多',
   }
 };
 
