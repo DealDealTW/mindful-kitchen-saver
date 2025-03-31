@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { addDays, differenceInDays, parseISO, format } from 'date-fns';
+import { User } from 'firebase/auth';
+import { FamilyGroup, onAuthStateChange, getCurrentUser, getUserFamilyGroups, syncDataWithFamilyGroup, getFamilyGroupData, onFamilyDataChange } from '../utils/FirebaseConfig';
 
 export type ItemCategory = 'Food' | 'Household';
 export type FilterType = 'All' | 'Food' | 'Household' | 'Expiring' | 'Expired';
@@ -43,6 +45,13 @@ interface AppContextType {
   updateSettings: (settings: Partial<AppSettings>) => void;
   exportData: () => string;
   importData: (jsonData: string) => boolean;
+  // 家庭共享相關
+  currentUser: User | null;
+  familyGroups: FamilyGroup[];
+  activeFamilyGroup: FamilyGroup | null;
+  setActiveFamilyGroup: (group: FamilyGroup | null) => void;
+  syncDataWithGroup: (groupId: string) => Promise<boolean>;
+  loadDataFromGroup: (groupId: string) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -94,6 +103,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   });
 
+  // 家庭共享相關狀態
+  const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
+  const [familyGroups, setFamilyGroups] = useState<FamilyGroup[]>([]);
+  const [activeFamilyGroup, setActiveFamilyGroup] = useState<FamilyGroup | null>(null);
+
   useEffect(() => {
     localStorage.setItem('whatsleftItems', JSON.stringify(items));
   }, [items]);
@@ -115,33 +129,122 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('whatsleftSettings', JSON.stringify(settings));
   }, [settings]);
 
+  // 監聽用戶登入狀態
+  useEffect(() => {
+    const unsubscribe = onAuthStateChange((user) => {
+      setCurrentUser(user);
+      
+      // 如果用戶登出，清除家庭群組資料
+      if (!user) {
+        setFamilyGroups([]);
+        setActiveFamilyGroup(null);
+      } else {
+        // 如果用戶登入，獲取他們的家庭群組
+        loadUserFamilyGroups(user.uid);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, []);
+
+  // 當活動家庭群組變化時，監聽其數據變化
+  useEffect(() => {
+    if (!activeFamilyGroup) return;
+    
+    const unsubscribe = onFamilyDataChange(activeFamilyGroup.id, (data) => {
+      if (data) {
+        // 來自家庭群組的數據更新，更新本地狀態
+        if (data.items) setItems(data.items);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [activeFamilyGroup]);
+
+  // 加載用戶的家庭群組
+  const loadUserFamilyGroups = async (userId: string) => {
+    const result = await getUserFamilyGroups(userId);
+    if (result.success && result.groups) {
+      setFamilyGroups(result.groups);
+    }
+  };
+
+  // 同步數據到家庭群組
+  const syncDataWithGroup = async (groupId: string): Promise<boolean> => {
+    const data = {
+      items,
+      lastUpdated: new Date().toISOString(),
+      updatedBy: currentUser?.uid
+    };
+    
+    const result = await syncDataWithFamilyGroup(groupId, data);
+    return result.success;
+  };
+
+  // 從家庭群組加載數據
+  const loadDataFromGroup = async (groupId: string): Promise<boolean> => {
+    const result = await getFamilyGroupData(groupId);
+    if (result.success && result.data) {
+      if (result.data.items) {
+        setItems(result.data.items);
+      }
+      return true;
+    }
+    return false;
+  };
+
   const addItem = (item: Omit<Item, 'id' | 'dateAdded'>) => {
     const newItem: Item = {
       ...item,
       id: Math.random().toString(36).substring(2, 9),
       dateAdded: new Date().toISOString(),
     };
-    setItems([...items, newItem]);
+    
+    const updatedItems = [...items, newItem];
+    setItems(updatedItems);
+    
+    // 如果有活動家庭群組，同步新數據
+    if (activeFamilyGroup) {
+      syncDataWithGroup(activeFamilyGroup.id);
+    }
   };
 
   const updateItem = (id: string, updatedItem: Partial<Item>) => {
-    setItems(
-      items.map((item) => (item.id === id ? { ...item, ...updatedItem } : item))
+    const updatedItems = items.map((item) => 
+      (item.id === id ? { ...item, ...updatedItem } : item)
     );
+    
+    setItems(updatedItems);
+    
+    // 如果有活動家庭群組，同步更新後的數據
+    if (activeFamilyGroup) {
+      syncDataWithGroup(activeFamilyGroup.id);
+    }
   };
 
   const deleteItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+    const updatedItems = items.filter((item) => item.id !== id);
+    setItems(updatedItems);
+    
+    // 如果有活動家庭群組，同步更新後的數據
+    if (activeFamilyGroup) {
+      syncDataWithGroup(activeFamilyGroup.id);
+    }
   };
 
   const markItemAsUsed = (id: string) => {
-    setItems(
-      items.map((item) => 
-        item.id === id 
-          ? { ...item, used: true, dateUsed: new Date().toISOString() } 
-          : item
-      )
+    const updatedItems = items.map((item) => 
+      item.id === id 
+        ? { ...item, used: true, dateUsed: new Date().toISOString() } 
+        : item
     );
+    
+    setItems(updatedItems);
+    
+    // 如果有活動家庭群組，同步更新後的數據
+    if (activeFamilyGroup) {
+      syncDataWithGroup(activeFamilyGroup.id);
+    }
   };
   
   // 更新設置
@@ -184,6 +287,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setLanguage(importedData.language);
       }
       
+      // 如果有活動家庭群組，同步導入的數據
+      if (activeFamilyGroup) {
+        syncDataWithGroup(activeFamilyGroup.id);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error importing data:', error);
@@ -212,7 +320,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         settings,
         updateSettings,
         exportData,
-        importData
+        importData,
+        // 家庭共享相關
+        currentUser,
+        familyGroups,
+        activeFamilyGroup,
+        setActiveFamilyGroup,
+        syncDataWithGroup,
+        loadDataFromGroup
       }}
     >
       {children}

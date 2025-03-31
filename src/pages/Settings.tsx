@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -92,8 +92,31 @@ import {
   loadFromDropbox
 } from '../utils/CloudStorage';
 
+import { 
+  createFamilyGroup,
+  joinFamilyGroup,
+  leaveFamilyGroup,
+  FamilyGroup
+} from '../utils/FirebaseConfig';
+
 const Settings: React.FC = () => {
-  const { darkMode, setDarkMode, language, setLanguage, settings, updateSettings, exportData, importData } = useApp();
+  const { 
+    darkMode, 
+    setDarkMode, 
+    language, 
+    setLanguage, 
+    settings, 
+    updateSettings, 
+    exportData, 
+    importData,
+    // 家庭共享相關
+    currentUser,
+    familyGroups,
+    activeFamilyGroup,
+    setActiveFamilyGroup,
+    syncDataWithGroup,
+    loadDataFromGroup
+  } = useApp();
   const t = useTranslation(language);
   const [importValue, setImportValue] = useState<string>("");
   const [exportValue, setExportValue] = useState<string>("");
@@ -109,6 +132,27 @@ const Settings: React.FC = () => {
   // 雲端儲存狀態
   const [loadingApi, setLoadingApi] = useState<string | null>(null);
   const [cloudProvider, setCloudProvider] = useState<string>("");
+  
+  // 家庭群組狀態
+  const [groupName, setGroupName] = useState<string>("");
+  const [inviteCode, setInviteCode] = useState<string>("");
+  const [creatingGroup, setCreatingGroup] = useState<boolean>(false);
+  const [joiningGroup, setJoiningGroup] = useState<boolean>(false);
+  const [showNewGroupSuccess, setShowNewGroupSuccess] = useState<boolean>(false);
+  const [newGroupInviteCode, setNewGroupInviteCode] = useState<string>("");
+  
+  // 使用Firebase身份驗證登入狀態替代模擬狀態
+  useEffect(() => {
+    if (currentUser) {
+      setIsLoggedIn(true);
+      setName(currentUser.displayName || "用戶");
+      setEmail(currentUser.email || "");
+    } else {
+      setIsLoggedIn(false);
+      setName("");
+      setEmail("");
+    }
+  }, [currentUser]);
   
   // 處理導出數據
   const handleExport = () => {
@@ -155,86 +199,186 @@ const Settings: React.FC = () => {
     setTimeout(() => window.location.reload(), 1500);
   };
   
-  // 登入函數 - 這只是模擬，實際應用需要連接後端
-  const handleLogin = () => {
-    if (email && password) {
-      // 這裡應該是實際的登入邏輯
-      setIsLoggedIn(true);
-      setName("測試用戶");
+  // 創建家庭群組
+  const handleCreateFamilyGroup = async () => {
+    if (!currentUser) return;
+    
+    if (!groupName) {
       toast({
-        title: t('loginSuccess'),
-        duration: 3000,
-      });
-    }
-  };
-  
-  // 註冊函數 - 這只是模擬，實際應用需要連接後端
-  const handleSignup = () => {
-    if (email && password && password === passwordConfirm) {
-      // 這裡應該是實際的註冊邏輯
-      setIsLoggedIn(true);
-      setName("測試用戶");
-      toast({
-        title: t('signupSuccess'),
-        duration: 3000,
-      });
-    } else if (password !== passwordConfirm) {
-      toast({
-        title: t('passwordMismatch'),
+        title: "請輸入群組名稱",
         variant: "destructive",
         duration: 3000,
       });
+      return;
     }
-  };
-  
-  // 登出函數
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setEmail("");
-    setPassword("");
-    setPasswordConfirm("");
-    setName("");
-    toast({
-      title: t('logoutSuccess'),
-      duration: 3000,
-    });
-  };
-  
-  // 下載備份文件
-  const handleDownloadBackup = async () => {
-    const data = exportData();
-    const success = await saveDataToFile(data, 'household-harbor-backup.json');
-    if (success) {
-      toast({
-        title: t('exportSuccess'),
-        duration: 3000,
-      });
-    } else {
-      toast({
-        title: t('fileSystemNotSupported'),
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  };
-  
-  // 上傳備份文件
-  const handleUploadBackup = async () => {
-    const data = await loadDataFromFile();
-    if (data) {
-      const success = importData(data);
-      if (success) {
+    
+    setCreatingGroup(true);
+    
+    try {
+      const result = await createFamilyGroup(groupName, currentUser.uid);
+      
+      if (result.success) {
+        setGroupName("");
+        setShowNewGroupSuccess(true);
+        setNewGroupInviteCode(result.inviteCode || "");
+        
         toast({
-          title: t('importSuccess'),
+          title: "家庭群組創建成功",
           duration: 3000,
         });
       } else {
         toast({
-          title: t('importError'),
+          title: "創建家庭群組失敗",
+          description: result.error,
           variant: "destructive",
           duration: 3000,
         });
       }
+    } catch (error) {
+      console.error("創建家庭群組時出錯:", error);
+      toast({
+        title: "創建家庭群組失敗",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+  
+  // 加入家庭群組
+  const handleJoinFamilyGroup = async () => {
+    if (!currentUser) return;
+    
+    if (!inviteCode) {
+      toast({
+        title: "請輸入邀請碼",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    
+    setJoiningGroup(true);
+    
+    try {
+      const result = await joinFamilyGroup(inviteCode, currentUser.uid);
+      
+      if (result.success) {
+        setInviteCode("");
+        toast({
+          title: "成功加入家庭群組",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "加入家庭群組失敗",
+          description: result.error,
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("加入家庭群組時出錯:", error);
+      toast({
+        title: "加入家庭群組失敗",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setJoiningGroup(false);
+    }
+  };
+  
+  // 退出家庭群組
+  const handleLeaveFamilyGroup = async (groupId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const result = await leaveFamilyGroup(groupId, currentUser.uid);
+      
+      if (result.success) {
+        toast({
+          title: "已退出家庭群組",
+          duration: 3000,
+        });
+        
+        // 如果正在使用的是剛退出的群組，清除活動群組
+        if (activeFamilyGroup && activeFamilyGroup.id === groupId) {
+          setActiveFamilyGroup(null);
+        }
+      } else {
+        toast({
+          title: "退出家庭群組失敗",
+          description: result.error,
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("退出家庭群組時出錯:", error);
+      toast({
+        title: "退出家庭群組失敗",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+  
+  // 切換活動群組
+  const handleSelectFamilyGroup = async (group: FamilyGroup | null) => {
+    setActiveFamilyGroup(group);
+    
+    if (group) {
+      // 從家庭群組載入數據
+      const success = await loadDataFromGroup(group.id);
+      
+      if (success) {
+        toast({
+          title: `已切換到 ${group.name}`,
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "載入家庭群組數據失敗",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } else {
+      toast({
+        title: "已切換到個人模式",
+        duration: 3000,
+      });
+    }
+  };
+  
+  // 同步數據到當前群組
+  const handleSyncWithCurrentGroup = async () => {
+    if (!activeFamilyGroup) return;
+    
+    try {
+      const success = await syncDataWithGroup(activeFamilyGroup.id);
+      
+      if (success) {
+        toast({
+          title: "數據已同步到家庭群組",
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "同步數據到家庭群組失敗",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("同步數據時出錯:", error);
+      toast({
+        title: "同步數據到家庭群組失敗",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
   };
   
@@ -615,26 +759,165 @@ const Settings: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-4 space-y-4">
+                {/* 當前活動群組 */}
+                {familyGroups.length > 0 && (
+                  <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                    <h3 className="text-sm font-medium">當前使用的家庭群組</h3>
+                    <div className="flex gap-2 items-center">
+                      <Select 
+                        value={activeFamilyGroup?.id || ""} 
+                        onValueChange={(value) => {
+                          const selectedGroup = value === "" 
+                            ? null 
+                            : familyGroups.find(g => g.id === value) || null;
+                          handleSelectFamilyGroup(selectedGroup);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="選擇家庭群組" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">個人模式</SelectItem>
+                          {familyGroups.map(group => (
+                            <SelectItem key={group.id} value={group.id}>
+                              {group.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      
+                      {activeFamilyGroup && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
+                          onClick={handleSyncWithCurrentGroup}
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                          同步數據
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* 我的家庭群組列表 */}
+                {familyGroups.length > 0 && (
+                  <div className="bg-muted/40 p-3 rounded-lg space-y-3">
+                    <h3 className="text-sm font-medium">我的家庭群組</h3>
+                    <div className="space-y-2">
+                      {familyGroups.map(group => (
+                        <div key={group.id} className="flex justify-between items-center p-2 bg-background/50 rounded-md">
+                          <div>
+                            <p className="font-medium">{group.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              成員: {group.members.length} | 
+                              {group.ownerId === currentUser?.uid ? ' 你是擁有者' : ' 成員'}
+                            </p>
+                          </div>
+                          <div className="flex gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(group.inviteCode);
+                                      toast({
+                                        title: "邀請碼已複製",
+                                        duration: 2000,
+                                      });
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>複製邀請碼</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            {group.ownerId !== currentUser?.uid && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost"
+                                      className="text-destructive hover:bg-destructive/10"
+                                      onClick={() => handleLeaveFamilyGroup(group.id)}
+                                    >
+                                      <LogOut className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>退出群組</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 {/* 共享鏈接生成 */}
                 <div className="bg-muted/40 p-3 rounded-lg space-y-3">
                   <h3 className="text-sm font-medium">{t('createFamilyGroup')}</h3>
                   <p className="text-xs text-muted-foreground">{t('familyGroupDescription')}</p>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
-                    onClick={() => {
-                      // 創建家庭群組功能
-                      toast({
-                        title: t('comingSoon'),
-                        description: t('featureInDevelopment'),
-                        duration: 3000,
-                      });
-                    }}
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    {t('createFamilyGroup')}
-                  </Button>
+                  <div className="space-y-2">
+                    <Input 
+                      placeholder="群組名稱" 
+                      value={groupName}
+                      onChange={(e) => setGroupName(e.target.value)}
+                    />
+                    
+                    <Button 
+                      variant="outline" 
+                      className="w-full flex items-center justify-center gap-2 hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
+                      onClick={handleCreateFamilyGroup}
+                      disabled={creatingGroup}
+                    >
+                      {creatingGroup ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                      ) : (
+                        <UserPlus className="h-4 w-4" />
+                      )}
+                      {t('createFamilyGroup')}
+                    </Button>
+                  </div>
+                  
+                  {/* 新群組創建成功訊息 */}
+                  {showNewGroupSuccess && (
+                    <div className="mt-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <p className="text-sm font-medium text-green-800 dark:text-green-300">群組已創建</p>
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="text-xs">邀請碼: <span className="font-mono font-medium">{newGroupInviteCode}</span></p>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-6 w-6 p-0"
+                          onClick={() => {
+                            navigator.clipboard.writeText(newGroupInviteCode);
+                            toast({
+                              title: "邀請碼已複製",
+                              duration: 2000,
+                            });
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* 加入共享 */}
@@ -644,20 +927,20 @@ const Settings: React.FC = () => {
                     <Input 
                       className="flex-1 bg-background/50" 
                       placeholder={t('enterInviteCode')}
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
                     />
                     <Button 
                       variant="outline" 
                       className="flex items-center hover:bg-whatsleft-blue/10 hover:text-whatsleft-blue transition-colors"
-                      onClick={() => {
-                        // 加入家庭群組功能
-                        toast({
-                          title: t('comingSoon'),
-                          description: t('featureInDevelopment'),
-                          duration: 3000,
-                        });
-                      }}
+                      onClick={handleJoinFamilyGroup}
+                      disabled={joiningGroup}
                     >
-                      <ArrowRight className="h-4 w-4" />
+                      {joiningGroup ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                      ) : (
+                        <ArrowRight className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
