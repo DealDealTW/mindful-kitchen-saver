@@ -4,8 +4,11 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { FamilyGroup, onAuthStateChange, getCurrentUser, getUserFamilyGroups, syncDataWithFamilyGroup, getFamilyGroupData, onFamilyDataChange } from '../utils/FirebaseConfig';
 
 // 擴展 User 類型，添加 isPremium 屬性
-export interface User extends FirebaseUser {
+export interface User extends Partial<FirebaseUser> {
   isPremium?: boolean;
+  id?: string;
+  username?: string;
+  email?: string;
 }
 
 export type ItemCategory = 'Food' | 'Household';
@@ -129,21 +132,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // 切換高級會員狀態的函數
   const togglePremiumStatus = () => {
-    if (currentUser) {
-      console.log('當前用戶狀態:', currentUser);
-      console.log('當前高級會員狀態:', currentUser.isPremium);
-      
-      const updatedUser = {
-        ...currentUser,
-        isPremium: !currentUser.isPremium
-      };
-      
-      console.log('更新後的高級會員狀態:', updatedUser.isPremium);
-      setCurrentUser(updatedUser);
-      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    } else {
-      console.log('沒有當前用戶');
-    }
+    console.log('切換高級會員狀態函數被調用');
+    
+    const updatedUser = currentUser ? {
+      ...currentUser,
+      isPremium: currentUser.isPremium ? false : true
+    } : {
+      id: 'temp-user-id',
+      username: 'User',
+      email: 'user@example.com',
+      isPremium: true
+    };
+    
+    console.log('更新後的用戶資料:', updatedUser);
+    setCurrentUser(updatedUser);
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
   };
 
   useEffect(() => {

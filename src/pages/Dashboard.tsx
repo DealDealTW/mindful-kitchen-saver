@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
             size="sm"
             className={`text-xs ${isSubscribed ? 'bg-whatsleft-yellow text-black' : 'bg-muted'}`}
             onClick={() => {
-              console.log('切換高級會員狀態');
+              console.log('Dashboard中點擊了高級會員按鈕');
               togglePremiumStatus();
             }}
           >
