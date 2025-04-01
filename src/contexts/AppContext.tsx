@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { addDays, differenceInDays, parseISO, format } from 'date-fns';
-import { User } from 'firebase/auth';
+import { User as FirebaseUser } from 'firebase/auth';
 import { FamilyGroup, onAuthStateChange, getCurrentUser, getUserFamilyGroups, syncDataWithFamilyGroup, getFamilyGroupData, onFamilyDataChange } from '../utils/FirebaseConfig';
+
+// 擴展 User 類型，添加 isPremium 屬性
+export interface User extends FirebaseUser {
+  isPremium?: boolean;
+}
 
 export type ItemCategory = 'Food' | 'Household';
 export type FilterType = 'All' | 'Food' | 'Household' | 'Expiring' | 'Expired';
@@ -17,12 +22,15 @@ export interface Item {
   notifyDaysBefore: number;
   used?: boolean;
   dateUsed?: string;
+  image?: string | null;
+  timesRepurchased?: number;
+  lastRepurchased?: string;
 }
 
 // 應用設置接口
 export interface AppSettings {
-  defaultExpiryDays: number;
-  defaultNotifyDays: number;
+  defaultExpiryDays: number | string;
+  defaultNotifyDays: number | string;
 }
 
 interface AppContextType {
@@ -52,6 +60,8 @@ interface AppContextType {
   setActiveFamilyGroup: (group: FamilyGroup | null) => void;
   syncDataWithGroup: (groupId: string) => Promise<boolean>;
   loadDataFromGroup: (groupId: string) => Promise<boolean>;
+  setCurrentUser: (user: User | null) => void;
+  togglePremiumStatus: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -71,8 +81,9 @@ export const calculateDaysUntilExpiry = (expiryDate: string): number => {
   return differenceInDays(expiry, today);
 };
 
-export const getExpiryDateFromDays = (days: number): string => {
-  const date = addDays(new Date(), days);
+export const getExpiryDateFromDays = (days: number | string): string => {
+  const daysNum = typeof days === 'string' ? parseInt(days) || 0 : days;
+  const date = addDays(new Date(), daysNum);
   return format(date, 'yyyy-MM-dd');
 };
 
@@ -104,9 +115,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   // 家庭共享相關狀態
-  const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    return savedUser ? JSON.parse(savedUser) : {
+      id: 'temp-user-id',
+      username: 'User',
+      email: 'user@example.com',
+      isPremium: false
+    };
+  });
   const [familyGroups, setFamilyGroups] = useState<FamilyGroup[]>([]);
   const [activeFamilyGroup, setActiveFamilyGroup] = useState<FamilyGroup | null>(null);
+
+  // 切換高級會員狀態的函數
+  const togglePremiumStatus = () => {
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        isPremium: !currentUser.isPremium
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('whatsleftItems', JSON.stringify(items));
@@ -128,6 +159,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('whatsleftSettings', JSON.stringify(settings));
   }, [settings]);
+
+  // 將用戶狀態保存到localStorage
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+  }, [currentUser]);
 
   // 監聽用戶登入狀態
   useEffect(() => {
@@ -249,10 +287,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   // 更新設置
   const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings(currentSettings => ({
-      ...currentSettings,
-      ...newSettings
-    }));
+    // 確保在保存到本地儲存之前轉換為正確的類型
+    const updatedSettings = {
+      ...settings,
+      ...newSettings,
+    };
+    
+    // 注意：我們不在此處強制轉換為數字，保留原始類型（可能是空字串）
+    setSettings(updatedSettings);
   };
   
   // 導出數據
@@ -327,7 +369,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeFamilyGroup,
         setActiveFamilyGroup,
         syncDataWithGroup,
-        loadDataFromGroup
+        loadDataFromGroup,
+        setCurrentUser,
+        togglePremiumStatus
       }}
     >
       {children}

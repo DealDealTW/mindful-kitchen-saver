@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, GridIcon, ListIcon, LayoutGrid, Images, Apple, ShoppingBag, LockIcon } from 'lucide-react';
 import ItemCard from '@/components/ItemCard';
 import ItemModal from '@/components/ItemModal';
 import ItemForm from '@/components/ItemForm';
@@ -8,11 +8,17 @@ import { useApp } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
+import { Badge } from "@/components/ui/badge";
+
+// 視圖模式類型
+type ViewMode = 'grid' | 'list' | 'photo';
 
 const Dashboard: React.FC = () => {
-  const { items, filter, sort, selectedItem, language } = useApp();
+  const { items, filter, sort, selectedItem, language, setSelectedItem, currentUser, togglePremiumStatus } = useApp();
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<typeof selectedItem>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  
   const t = useTranslation(language);
   
   const handleEdit = () => {
@@ -48,11 +54,56 @@ const Dashboard: React.FC = () => {
       return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
     }
   });
+  
+  // 檢查用戶是否為訂閱用戶
+  const isSubscribed = currentUser?.isPremium || false;
 
   return (
     <div className="w-full max-w-md mx-auto px-2 py-4 pb-16">
-      <div className="mb-4">
+      <div className="flex justify-between items-center mb-4">
         <CategoryFilterMenu />
+        <div className="flex items-center gap-2">
+          {/* 高級會員開關 */}
+          <Button
+            variant="outline"
+            size="sm"
+            className={`text-xs ${isSubscribed ? 'bg-whatsleft-yellow text-black' : 'bg-muted'}`}
+            onClick={togglePremiumStatus}
+          >
+            {isSubscribed ? t('premiumActive') : t('premiumInactive')}
+          </Button>
+          
+          <div className="flex items-center space-x-1 bg-muted/50 p-1 rounded-md">
+            <Button 
+              variant={viewMode === 'grid' ? 'default' : 'ghost'} 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={() => setViewMode('grid')}
+              title={t('gridView')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={viewMode === 'list' ? 'default' : 'ghost'} 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={() => setViewMode('list')}
+              title={t('listView')}
+            >
+              <ListIcon className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={viewMode === 'photo' ? 'default' : 'ghost'} 
+              size="icon" 
+              className="h-8 w-8 relative" 
+              onClick={() => isSubscribed ? setViewMode('photo') : setViewMode('grid')}
+              title={isSubscribed ? t('photoView') : t('premiumFeature')}
+            >
+              <Images className="h-4 w-4" />
+              {!isSubscribed && <LockIcon className="h-3 w-3 absolute top-0 right-0 text-whatsleft-yellow" />}
+            </Button>
+          </div>
+        </div>
       </div>
       
       {sortedItems.length === 0 ? (
@@ -66,10 +117,38 @@ const Dashboard: React.FC = () => {
             {t('addYourFirst')}
           </Button>
         </div>
-      ) : (
+      ) : viewMode === 'photo' && isSubscribed ? (
         <div className="grid grid-cols-2 gap-3">
+          {sortedItems.filter(item => item.image).length === 0 ? (
+            <div className="col-span-2 rounded-xl bg-primary/10 border border-primary/20 flex flex-col items-center justify-center py-8 text-center px-4">
+              <h3 className="text-lg font-medium mb-2 text-primary">{t('noImagesTitle')}</h3>
+              <p className="text-sm text-muted-foreground mb-4">{t('noImagesDescription')}</p>
+              <Button onClick={handleAddItem} size="sm" className="gap-2">
+                <PlusIcon className="h-4 w-4" />
+                {t('addItemWithPhoto')}
+              </Button>
+            </div>
+          ) : (
+            sortedItems.filter(item => item.image).map(item => (
+              <ItemCard key={item.id} item={item} viewMode="photo" />
+            ))
+          )}
+        </div>
+      ) : viewMode === 'photo' && !isSubscribed ? (
+        <div className="rounded-xl bg-primary/10 border border-primary/20 flex flex-col items-center justify-center py-12 text-center px-4">
+          <LockIcon className="h-10 w-10 text-whatsleft-yellow mb-4" />
+          <h3 className="text-xl font-bold mb-2 text-primary">{t('premiumFeatureTitle')}</h3>
+          <p className="text-muted-foreground mb-6 max-w-md whitespace-pre-line">
+            {t('premiumFeatureDescription')}
+          </p>
+          <Button size="lg" className="gap-2 px-6" variant="default">
+            {t('upgradeToPremium')}
+          </Button>
+        </div>
+      ) : (
+        <div className={`${viewMode === 'grid' ? "grid grid-cols-2 gap-3" : "space-y-3"}`}>
           {sortedItems.map(item => (
-            <ItemCard key={item.id} item={item} />
+            <ItemCard key={item.id} item={item} viewMode={viewMode} />
           ))}
         </div>
       )}
