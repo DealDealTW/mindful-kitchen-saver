@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { format } from 'date-fns';
-import { Apple, ShoppingBag, Plus, Minus, Save, X, Bell, Calendar, ChevronDown, Camera, Trash2, LockIcon } from 'lucide-react';
+import { Apple, ShoppingBag, Plus, Minus, Save, X, Bell, Calendar, ChevronDown, Camera, Trash2, LockIcon, Mic, MicOff } from 'lucide-react';
 import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays, ItemCategory } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +23,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
 
 interface ItemFormProps {
   open: boolean;
@@ -35,28 +36,40 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
   const t = useTranslation(language);
   const isSubscribed = currentUser?.isPremium || false;
   
+  // 基本表單狀態
   const [itemName, setItemName] = useState(editItem?.name || '');
   const [quantity, setQuantity] = useState(editItem?.quantity || '1');
   const [category, setCategory] = useState<ItemCategory>(editItem?.category || 'Food');
   const [expiryDate, setExpiryDate] = useState<Date>(
     editItem?.expiryDate ? new Date(editItem.expiryDate) : new Date(getExpiryDateFromDays(settings.defaultExpiryDays))
   );
-  
   const [daysUntilExpiry, setDaysUntilExpiry] = useState<number | string>(
     editItem?.daysUntilExpiry !== undefined 
     ? editItem.daysUntilExpiry 
     : settings.defaultExpiryDays
   );
-
   const [notifyDaysBefore, setNotifyDaysBefore] = useState<number | string>(
     editItem?.notifyDaysBefore !== undefined 
     ? editItem.notifyDaysBefore 
     : settings.defaultNotifyDays
   );
-
   const [dateInputType, setDateInputType] = useState<'days' | 'date'>('days');
   const [image, setImage] = useState<string | null>(editItem?.image || null);
-
+  
+  // 相機相關
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  
+  // 語音相關
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+  
+  // 當組件打開時初始化數據
   useEffect(() => {
     if (open && editItem) {
       setItemName(editItem.name || '');
@@ -69,18 +82,154 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
     } else if (open && !editItem) {
       resetForm();
     }
-  }, [open, editItem, settings.defaultExpiryDays, settings.defaultNotifyDays]);
-
+  }, [open, editItem, settings]);
+  
+  // 如果語音識別成功，更新項目名稱
+  useEffect(() => {
+    if (transcript) {
+      setItemName(transcript);
+    }
+  }, [transcript]);
+  
+  // 組件卸載或對話框關閉時，清理資源
+  useEffect(() => {
+    const cleanup = () => {
+      stopCamera();
+      if (listening) {
+        SpeechRecognition.stopListening();
+      }
+    };
+    
+    if (!open) {
+      cleanup();
+    }
+    
+    return cleanup;
+  }, [open, listening]);
+  
   // 預設天數選項
   const dayOptions = [1, 3, 7, 14, 30, 60, 90];
-
+  
+  // 處理語音輸入
+  const handleVoiceInput = () => {
+    if (listening) {
+      SpeechRecognition.stopListening();
+    } else {
+      if (!browserSupportsSpeechRecognition) {
+        alert(t('language') === 'en' ? 
+          'Your browser does not support speech recognition.' : 
+          '您的瀏覽器不支援語音識別功能。');
+        return;
+      }
+      
+      try {
+        resetTranscript();
+        SpeechRecognition.startListening({
+          continuous: true,
+          language: language === 'zh-TW' || language === 'zh-CN' ? 'zh-CN' : 'en-US'
+        });
+      } catch (error) {
+        console.error('語音識別錯誤:', error);
+      }
+    }
+  };
+  
+  // 開啟相機
+  const handleCameraToggle = async () => {
+    if (!isSubscribed) return;
+    
+    if (showCamera) {
+      stopCamera();
+    } else {
+      try {
+        // 先清理舊的相機流
+        stopCamera();
+        
+        // 請求相機權限
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment'
+          }
+        });
+        
+        // 保存流並設置視頻元素
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+        
+        setShowCamera(true);
+      } catch (error) {
+        console.error('相機錯誤:', error);
+        alert(t('language') === 'en' ? 
+          'Cannot access camera. Please check your permissions.' : 
+          '無法訪問相機。請檢查您的權限設置。');
+      }
+    }
+  };
+  
+  // 停止相機
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setShowCamera(false);
+  };
+  
+  // 手動拍照
+  const capturePhoto = () => {
+    if (!videoRef.current || !streamRef.current) return;
+    
+    try {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      
+      ctx.drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg');
+      
+      // 設置照片但不自動提交表單
+      setImage(imageData);
+      
+      // 如果項目名稱為空，設置一個基於日期的默認名稱
+      if (!itemName) {
+        const now = new Date();
+        const defaultName = `${t('item')} ${format(now, 'yyyy-MM-dd')}`;
+        setItemName(defaultName);
+      }
+      
+      // 拍照後關閉相機
+      stopCamera();
+    } catch (error) {
+      console.error('拍照錯誤:', error);
+    }
+  };
+  
+  // 清除表單
+  const resetForm = () => {
+    setItemName('');
+    setQuantity('1');
+    setCategory('Food');
+    setExpiryDate(new Date(getExpiryDateFromDays(settings.defaultExpiryDays)));
+    setDaysUntilExpiry(settings.defaultExpiryDays);
+    setNotifyDaysBefore(settings.defaultNotifyDays);
+    setImage(null);
+  };
+  
+  // 處理天數變更
   const handleDaysChange = (days: number) => {
     setDaysUntilExpiry(days);
     const today = new Date();
     const newExpiryDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000);
     setExpiryDate(newExpiryDate);
   };
-
+  
+  // 處理日期選擇
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setExpiryDate(date);
@@ -90,7 +239,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
       setDaysUntilExpiry(diffDays);
     }
   };
-
+  
+  // 處理天數輸入
   const handleDaysInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
     
@@ -102,81 +252,31 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
     
     setDaysUntilExpiry(value);
   };
-
+  
+  // 處理通知天數輸入
   const handleNotifyDaysInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
     setNotifyDaysBefore(value);
   };
-
+  
+  // 增加數量
   const increaseQuantity = () => {
     const currentQuantity = parseInt(quantity) || 0;
     setQuantity((currentQuantity + 1).toString());
   };
-
+  
+  // 減少數量
   const decreaseQuantity = () => {
     const currentQuantity = parseInt(quantity) || 0;
     if (currentQuantity > 1) {
       setQuantity((currentQuantity - 1).toString());
     }
   };
-
-  const resetForm = () => {
-    setItemName('');
-    setQuantity('1');
-    setCategory('Food');
-    setExpiryDate(new Date(getExpiryDateFromDays(settings.defaultExpiryDays)));
-    setDaysUntilExpiry(settings.defaultExpiryDays);
-    setNotifyDaysBefore(settings.defaultNotifyDays);
-    setImage(null);
-  };
-
-  const handleCameraCapture = async () => {
-    if (!isSubscribed) {
-      console.log("Premium feature not available");
-      return; // 如果不是高級用戶，提前返回
-    }
-    
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      
-      // 建立臨時畫布捕捉影像
-      video.onloadedmetadata = () => {
-        video.play();
-        setTimeout(() => {
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(video, 0, 0);
-          
-          // 停止攝像頭並取得圖片
-          const tracks = stream.getTracks();
-          tracks.forEach(track => track.stop());
-          
-          // 轉換為 base64 並保存
-          const imgData = canvas.toDataURL('image/jpeg');
-          setImage(imgData);
-
-          // 如果項目名稱為空，自動填入臨時項目名稱
-          if (!itemName.trim()) {
-            // 使用時間戳作為默認名稱
-            const now = new Date();
-            const defaultName = `${t('item')} ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-            setItemName(defaultName);
-          }
-        }, 300);
-      };
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-    }
-  };
-
+  
+  // 提交表單
   const handleSubmit = () => {
     if (!itemName.trim()) return;
-
-    const today = new Date();
+    
     const formattedDate = expiryDate.toISOString().split('T')[0];
     
     // 確保提交時將空字串轉換為數字0
@@ -195,9 +295,9 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
       expiryDate: formattedDate,
       daysUntilExpiry: daysUntilExpiryValue,
       notifyDaysBefore: notifyDaysBeforeValue,
-      image: image,
+      image,
     };
-
+    
     if (editItem) {
       updateItem(editItem.id, item);
       const updatedItem = { ...editItem, ...item };
@@ -207,10 +307,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
       setSelectedItem(null);
       resetForm();
     }
-
+    
     onOpenChange(false);
   };
-
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md rounded-xl overflow-hidden p-0">
@@ -231,69 +331,109 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
         </div>
         
         <div className="p-6 space-y-5">
-          <div className="space-y-2">
-            <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
-              {t('itemImage')}
-              {!isSubscribed && (
-                <Badge variant="outline" className="ml-2 bg-whatsleft-yellow/10 text-whatsleft-yellow border-whatsleft-yellow text-xs font-normal py-0">
-                  <LockIcon className="h-3 w-3 mr-1"/> {t('premiumFeature')}
-                </Badge>
-              )}
-            </Label>
-            <div className="flex flex-col items-center">
-              {image ? (
-                <div className="relative w-full aspect-square rounded-lg overflow-hidden mb-2">
-                  <img 
-                    src={image} 
-                    alt={itemName || t('itemImage')} 
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 rounded-full w-8 h-8"
-                    onClick={() => setImage(null)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="w-full aspect-square bg-muted/30 rounded-lg flex flex-col items-center justify-center mb-2">
-                  <Camera className="h-12 w-12 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">{t('noImageUploaded')}</p>
-                  {!isSubscribed && (
-                    <div className="mt-2 px-3 py-1 bg-whatsleft-yellow/10 rounded-md text-xs text-whatsleft-yellow flex items-center">
-                      <LockIcon className="h-3 w-3 mr-1"/> {t('premiumFeature')}
-                    </div>
-                  )}
-                </div>
-              )}
-              <Button 
-                type="button" 
-                variant="outline" 
-                className={`w-full ${isSubscribed ? 'bg-muted/50 hover:bg-muted/70' : 'bg-muted/30 text-muted-foreground cursor-not-allowed opacity-70'}`}
-                onClick={isSubscribed ? handleCameraCapture : undefined}
-                disabled={!isSubscribed}
+          {/* 相機和語音按鈕 */}
+          <div className="flex justify-center gap-3">
+            {/* 語音按鈕 */}
+            <Button
+              type="button"
+              variant={listening ? "default" : "outline"}
+              size="sm"
+              className="rounded-lg"
+              onClick={handleVoiceInput}
+            >
+              {listening ? <MicOff className="h-4 w-4 mr-2" /> : <Mic className="h-4 w-4 mr-2" />}
+              {t('voiceInput')}
+            </Button>
+            
+            {/* 相機按鈕 */}
+            {isSubscribed ? (
+              <Button
+                type="button"
+                variant={showCamera ? "default" : "outline"}
+                size="sm"
+                className="rounded-lg"
+                onClick={handleCameraToggle}
               >
-                {isSubscribed ? (
-                  <>
-                    <Camera className="h-4 w-4 mr-2" />
-                    {t('takePhoto')}
-                  </>
-                ) : (
-                  <>
-                    <LockIcon className="h-4 w-4 mr-2" />
-                    {t('premiumFeature')}
-                  </>
-                )}
+                <Camera className="h-4 w-4 mr-2" />
+                {t('cameraInput')}
               </Button>
-            </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-lg opacity-70 cursor-not-allowed"
+                disabled
+              >
+                <Camera className="h-4 w-4 mr-2" />
+                {t('cameraInput')}
+                <LockIcon className="h-3 w-3 ml-1" />
+              </Button>
+            )}
           </div>
           
+          {/* 相機區域 */}
+          {showCamera && (
+            <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                <Button
+                  type="button"
+                  className="w-16 h-16 rounded-full bg-white hover:bg-gray-100 shadow-md border-2 border-primary"
+                  onClick={capturePhoto}
+                >
+                  <Camera className="h-6 w-6 text-primary" />
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* 已拍攝的圖片 */}
+          {image && !showCamera && (
+            <div className="relative w-full aspect-square rounded-lg overflow-hidden mb-4">
+              <img 
+                src={image} 
+                alt={itemName} 
+                className="w-full h-full object-cover"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon"
+                className="absolute top-2 right-2 rounded-full w-8 h-8 shadow-md"
+                onClick={() => setImage(null)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
+          {/* 語音輸入提示 */}
+          {listening && (
+            <div className="bg-primary/10 p-3 rounded-lg mb-3">
+              <p className="text-sm text-primary flex items-center">
+                <Mic className="h-4 w-4 mr-2 animate-pulse" />
+                {t('listening')}...
+              </p>
+              <p className="text-xs mt-1 text-muted-foreground">
+                {transcript || (t('language') === 'en' ? 'Speak the name of your item...' : '請說出您的物品名稱...')}
+              </p>
+            </div>
+          )}
+          
+          {/* 物品名稱 */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('itemName')}</Label>
+            <Label htmlFor="itemName" className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
+              {t('itemName')}
+            </Label>
             <Input 
-              id="name" 
+              id="itemName" 
               value={itemName} 
               onChange={(e) => setItemName(e.target.value)} 
               placeholder={t('language') === 'en' ? "e.g., Milk, Bread..." : "例如：牛奶、麵包..."}
@@ -302,10 +442,13 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
             />
           </div>
           
+          {/* 類別和數量 */}
           <div className="grid grid-cols-2 gap-5">
-            {/* Category */}
+            {/* 類別 */}
             <div className="space-y-2">
-              <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('category')}</Label>
+              <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
+                {t('category')}
+              </Label>
               <div className="flex space-x-2">
                 <Button
                   type="button"
@@ -326,9 +469,11 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
               </div>
             </div>
             
-            {/* Quantity */}
+            {/* 數量 */}
             <div className="space-y-2">
-              <Label htmlFor="quantity" className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('quantity')}</Label>
+              <Label htmlFor="quantity" className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
+                {t('quantity')}
+              </Label>
               <div className="flex items-center space-x-2">
                 <Button 
                   type="button" 
@@ -358,9 +503,12 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
             </div>
           </div>
           
+          {/* 到期天數/日期 */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('daysUntilExpiry')}</Label>
+              <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
+                {t('daysUntilExpiry')}
+              </Label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -463,8 +611,11 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
             </div>
           </div>
           
+          {/* 提前通知天數 */}
           <div className="space-y-2">
-            <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('notifyBefore')}</Label>
+            <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
+              {t('notifyBefore')}
+            </Label>
             <Input 
               type="number" 
               value={notifyDaysBefore}
@@ -497,12 +648,22 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
         
         <Separator />
         
+        {/* 底部按鈕 */}
         <DialogFooter className="p-4 flex gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="gap-2 flex-1 rounded-lg hover:bg-muted/50">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            className="gap-2 flex-1 rounded-lg hover:bg-muted/50"
+          >
             <X className="h-4 w-4" />
             {t('cancel')}
           </Button>
-          <Button type="button" onClick={handleSubmit} className="gap-2 flex-1 rounded-lg hover:bg-primary/90">
+          <Button 
+            type="button" 
+            onClick={handleSubmit} 
+            className="gap-2 flex-1 rounded-lg hover:bg-primary/90"
+          >
             <Save className="h-4 w-4" />
             {t('save')}
           </Button>
