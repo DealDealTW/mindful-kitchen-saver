@@ -132,6 +132,10 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
         <Separator />
         
         <DialogFooter className="p-4 flex flex-col gap-2">
+          <Button variant="default" onClick={handleMarkAsUsed} className="gap-2 w-full bg-emerald-600 hover:bg-emerald-700">
+            <CheckCircle className="h-4 w-4" />
+            {t('markAsUsed')}
+          </Button>
           <div className="flex gap-2 w-full">
             <Button variant="destructive" onClick={handleDelete} className="gap-2 flex-1 hover:bg-destructive/90">
               <Trash2Icon className="h-4 w-4" />
@@ -142,10 +146,6 @@ const ItemModal: React.FC<ItemModalProps> = ({ onEdit }) => {
               {t('edit')}
             </Button>
           </div>
-          <Button variant="default" onClick={handleMarkAsUsed} className="gap-2 w-full bg-emerald-600 hover:bg-emerald-700">
-            <CheckCircle className="h-4 w-4" />
-            {t('markAsUsed')}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

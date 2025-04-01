@@ -9,14 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { format } from 'date-fns';
-import { CalendarIcon, Apple, ShoppingBag, Plus, Minus, Save, X, Bell } from 'lucide-react';
+import { Apple, ShoppingBag, Plus, Minus, Save, X, Bell } from 'lucide-react';
 import { Item, useApp, calculateDaysUntilExpiry, getExpiryDateFromDays, ItemCategory } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import { Separator } from "@/components/ui/separator";
@@ -38,19 +32,34 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
   const [expiryDate, setExpiryDate] = useState<Date>(
     editItem?.expiryDate ? new Date(editItem.expiryDate) : new Date(getExpiryDateFromDays(settings.defaultExpiryDays))
   );
-  const [useExpiryDate, setUseExpiryDate] = useState(!!editItem?.expiryDate);
   
-  const [daysUntilExpiry, setDaysUntilExpiry] = useState(
+  const [daysUntilExpiry, setDaysUntilExpiry] = useState<number | string>(
     editItem?.daysUntilExpiry !== undefined 
     ? editItem.daysUntilExpiry 
     : settings.defaultExpiryDays
   );
 
-  const [notifyDaysBefore, setNotifyDaysBefore] = useState(
+  const [notifyDaysBefore, setNotifyDaysBefore] = useState<number | string>(
     editItem?.notifyDaysBefore !== undefined 
     ? editItem.notifyDaysBefore 
     : settings.defaultNotifyDays
   );
+
+  useEffect(() => {
+    if (open && editItem) {
+      setItemName(editItem.name || '');
+      setQuantity(editItem.quantity || '1');
+      setCategory(editItem.category || 'Food');
+      setExpiryDate(editItem.expiryDate ? new Date(editItem.expiryDate) : new Date(getExpiryDateFromDays(settings.defaultExpiryDays)));
+      setDaysUntilExpiry(editItem.daysUntilExpiry !== undefined ? editItem.daysUntilExpiry : settings.defaultExpiryDays);
+      setNotifyDaysBefore(editItem.notifyDaysBefore !== undefined ? editItem.notifyDaysBefore : settings.defaultNotifyDays);
+    } else if (open && !editItem) {
+      resetForm();
+    }
+  }, [open, editItem, settings.defaultExpiryDays, settings.defaultNotifyDays]);
+
+  // 預設天數選項
+  const dayOptions = [1, 3, 7, 14, 30, 60, 90];
 
   const handleDaysChange = (days: number) => {
     setDaysUntilExpiry(days);
@@ -60,25 +69,20 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
   };
 
   const handleDaysInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 0;
-    handleDaysChange(value);
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
+    
+    if (typeof value === 'number') {
+      const today = new Date();
+      const newExpiryDate = new Date(today.getTime() + value * 24 * 60 * 60 * 1000);
+      setExpiryDate(newExpiryDate);
+    }
+    
+    setDaysUntilExpiry(value);
   };
 
   const handleNotifyDaysInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || 0;
+    const value = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
     setNotifyDaysBefore(value);
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setExpiryDate(date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const expiry = new Date(date);
-      expiry.setHours(0, 0, 0, 0);
-      const days = Math.round((expiry.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
-      setDaysUntilExpiry(days);
-    }
   };
 
   const increaseQuantity = () => {
@@ -93,11 +97,29 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
     }
   };
 
+  const resetForm = () => {
+    setItemName('');
+    setQuantity('1');
+    setCategory('Food');
+    setExpiryDate(new Date(getExpiryDateFromDays(settings.defaultExpiryDays)));
+    setDaysUntilExpiry(settings.defaultExpiryDays);
+    setNotifyDaysBefore(settings.defaultNotifyDays);
+  };
+
   const handleSubmit = () => {
     if (!itemName.trim()) return;
 
     const today = new Date();
     const formattedDate = expiryDate.toISOString().split('T')[0];
+    
+    // 確保提交時將空字串轉換為數字0
+    const daysUntilExpiryValue = typeof daysUntilExpiry === 'string' ? 
+      (daysUntilExpiry === '' ? 0 : parseInt(daysUntilExpiry)) : 
+      daysUntilExpiry;
+      
+    const notifyDaysBeforeValue = typeof notifyDaysBefore === 'string' ? 
+      (notifyDaysBefore === '' ? 0 : parseInt(notifyDaysBefore)) : 
+      notifyDaysBefore;
     
     const item = {
       name: itemName,
@@ -105,7 +127,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
       category,
       expiryDate: formattedDate,
       daysUntilExpiry: calculateDaysUntilExpiry(formattedDate),
-      notifyDaysBefore,
+      notifyDaysBefore: notifyDaysBeforeValue,
     };
 
     if (editItem) {
@@ -115,6 +137,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
     } else {
       addItem(item);
       setSelectedItem(null);
+      resetForm();
     }
 
     onOpenChange(false);
@@ -148,6 +171,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
               onChange={(e) => setItemName(e.target.value)} 
               placeholder="e.g., Milk, Bread..."
               className="border-muted bg-muted/50 rounded-lg"
+              autoComplete="off"
             />
           </div>
           
@@ -210,74 +234,43 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">{t('daysUntilExpiry')}</Label>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setUseExpiryDate(!useExpiryDate)}
-                className="text-xs flex items-center gap-1"
-              >
-                <CalendarIcon className="h-3 w-3" />
-                {useExpiryDate ? t('expiryDate') : t('daysUntilExpiry')}
-              </Button>
             </div>
             
-            {useExpiryDate ? (
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex gap-2 items-center">
                 <Input 
                   type="number" 
                   value={daysUntilExpiry}
                   onChange={handleDaysInput}
                   min="0"
                   max="365"
-                  className="border-muted bg-muted/50 rounded-lg"
+                  className="border-muted bg-muted/50 rounded-lg flex-1"
                 />
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className="font-medium border-primary text-primary">
-                    {format(expiryDate, 'MMM d, yyyy')}
-                  </Badge>
-                  <div className="flex gap-2">
-                    {[1, 3, 7, 14, 30].map(days => (
-                      <Button 
-                        key={days} 
-                        type="button" 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDaysChange(days)}
-                        className={`text-xs rounded-full px-2 min-w-[40px] h-6 ${daysUntilExpiry === days ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted/70'}`}
-                      >
-                        {days}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal border-muted bg-muted/50 rounded-lg">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {expiryDate ? format(expiryDate, 'PPP') : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 rounded-lg border-muted" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={expiryDate}
-                      onSelect={handleDateChange}
-                      initialFocus
-                      captionLayout="dropdown-buttons"
-                      fromYear={2023}
-                      toYear={2030}
-                      className="p-3 rounded-lg"
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Badge variant="outline" className="font-medium border-primary text-primary">
-                  {daysUntilExpiry} {t('days')}
+                <Badge variant="outline" className="font-medium border-primary text-primary whitespace-nowrap">
+                  {t('days')}
                 </Badge>
               </div>
-            )}
+              
+              <div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  {t('expiryDate')}: <span className="font-semibold">{format(expiryDate, 'MMM d, yyyy')}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {dayOptions.map(days => (
+                    <Button 
+                      key={days} 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleDaysChange(days)}
+                      className={`text-xs px-2 py-0 h-6 ${daysUntilExpiry === days ? 'bg-primary text-primary-foreground' : 'bg-muted/50 hover:bg-muted/70'}`}
+                    >
+                      {days} {t('days')}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-2">
