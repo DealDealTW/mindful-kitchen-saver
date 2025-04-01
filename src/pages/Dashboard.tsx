@@ -68,7 +68,10 @@ const Dashboard: React.FC = () => {
             variant="outline"
             size="sm"
             className={`text-xs ${isSubscribed ? 'bg-whatsleft-yellow text-black' : 'bg-muted'}`}
-            onClick={togglePremiumStatus}
+            onClick={() => {
+              console.log('切換高級會員狀態');
+              togglePremiumStatus();
+            }}
           >
             {isSubscribed ? t('premiumActive') : t('premiumInactive')}
           </Button>

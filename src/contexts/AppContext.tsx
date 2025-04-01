@@ -130,12 +130,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 切換高級會員狀態的函數
   const togglePremiumStatus = () => {
     if (currentUser) {
+      console.log('當前用戶狀態:', currentUser);
+      console.log('當前高級會員狀態:', currentUser.isPremium);
+      
       const updatedUser = {
         ...currentUser,
         isPremium: !currentUser.isPremium
       };
+      
+      console.log('更新後的高級會員狀態:', updatedUser.isPremium);
       setCurrentUser(updatedUser);
       localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+    } else {
+      console.log('沒有當前用戶');
     }
   };
 
