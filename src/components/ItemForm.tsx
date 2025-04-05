@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog,
@@ -330,7 +331,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
           </DialogHeader>
         </div>
         
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 max-h-[calc(80vh-180px)] overflow-y-auto">
           {/* 相機和語音按鈕 */}
           <div className="flex justify-center gap-3">
             {/* 語音按鈕 */}
@@ -442,34 +443,9 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
             />
           </div>
           
-          {/* 類別和數量 */}
+          {/* 類別和數量 - 交換位置 */}
           <div className="grid grid-cols-2 gap-5">
-            {/* 類別 */}
-            <div className="space-y-2">
-              <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
-                {t('category')}
-              </Label>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={category === 'Food' ? 'default' : 'outline'}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-lg ${category === 'Food' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}
-                  onClick={() => setCategory('Food')}
-                >
-                  <Apple className="h-5 w-5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant={category === 'Household' ? 'default' : 'outline'}
-                  className={`flex-1 flex items-center justify-center gap-2 rounded-lg ${category === 'Household' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}
-                  onClick={() => setCategory('Household')}
-                >
-                  <ShoppingBag className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            
-            {/* 數量 */}
+            {/* 數量 - 現在在左邊 */}
             <div className="space-y-2">
               <Label htmlFor="quantity" className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
                 {t('quantity')}
@@ -498,6 +474,31 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
                   className="rounded-lg bg-muted/50 hover:bg-muted/70"
                 >
                   <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* 類別 - 現在在右邊 */}
+            <div className="space-y-2">
+              <Label className="text-sm uppercase text-muted-foreground font-medium tracking-wide">
+                {t('category')}
+              </Label>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant={category === 'Food' ? 'default' : 'outline'}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-lg ${category === 'Food' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}
+                  onClick={() => setCategory('Food')}
+                >
+                  <Apple className="h-5 w-5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={category === 'Household' ? 'default' : 'outline'}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-lg ${category === 'Household' ? 'bg-primary text-primary-foreground' : 'bg-muted/50'}`}
+                  onClick={() => setCategory('Household')}
+                >
+                  <ShoppingBag className="h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -648,8 +649,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem }) => 
         
         <Separator />
         
-        {/* 底部按鈕 */}
-        <DialogFooter className="p-4 flex gap-2">
+        {/* 底部按鈕 - 固定在底部 */}
+        <DialogFooter className="p-4 flex gap-2 bg-background sticky bottom-0">
           <Button 
             type="button" 
             variant="outline" 
