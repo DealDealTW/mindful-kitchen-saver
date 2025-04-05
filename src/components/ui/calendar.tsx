@@ -1,12 +1,12 @@
+
 "use client"
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker, DayPickerSingleProps } from "react-day-picker";
+import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { Select } from "@/components/ui/select";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
   onConfirm?: (date: Date | undefined) => void;
@@ -20,13 +20,14 @@ function Calendar({
   ...props
 }: CalendarProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    (props as DayPickerSingleProps).selected as Date | undefined
+    (props.selected as Date | undefined)
   );
 
   const handleSelect = (date: Date | undefined) => {
     setSelectedDate(date);
-    if ((props as any).onSelect) {
-      (props as any).onSelect(date);
+    if (props.onSelect) {
+      // Use type assertion to call onSelect
+      (props.onSelect as (date: Date | undefined) => void)(date);
     }
   };
 
@@ -40,7 +41,7 @@ function Calendar({
     <div className="flex flex-col">
       <DayPicker
         showOutsideDays={showOutsideDays}
-        className={cn("p-3", className)}
+        className={cn("p-3 pointer-events-auto", className)}
         classNames={{
           months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
           month: "space-y-4",
@@ -81,12 +82,12 @@ function Calendar({
           IconLeft: () => <ChevronLeft className="h-4 w-4" />,
           IconRight: () => <ChevronRight className="h-4 w-4" />,
         }}
-        {...props}
         selected={selectedDate}
-        onSelect={(date) => handleSelect(date as Date | undefined)}
+        onSelect={handleSelect}
         captionLayout="dropdown-buttons"
         fromYear={2023}
         toYear={2030}
+        {...props}
       />
 
       <div className="mt-4 px-3 pb-2">
