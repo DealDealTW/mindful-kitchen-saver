@@ -3,12 +3,13 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import { DayPicker, DayPickerSingleProps } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+// Extend the DayPickerSingleProps to include our custom onConfirm prop
+export type CalendarProps = Omit<DayPickerSingleProps, "mode"> & {
   onConfirm?: (date: Date | undefined) => void;
 };
 
@@ -20,15 +21,13 @@ function Calendar({
   ...props
 }: CalendarProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    (props.selected as Date | undefined)
+    props.selected as Date | undefined
   );
 
   const handleSelect = (date: Date | undefined) => {
     setSelectedDate(date);
-    if (props.onSelect) {
-      // Use type assertion to call onSelect
-      (props.onSelect as (date: Date | undefined) => void)(date);
-    }
+    // The onSelect prop is handled differently depending on mode
+    // For single mode, we use the onDayClick property
   };
 
   const confirmDate = () => {
@@ -40,6 +39,7 @@ function Calendar({
   return (
     <div className="flex flex-col">
       <DayPicker
+        mode="single"
         showOutsideDays={showOutsideDays}
         className={cn("p-3 pointer-events-auto", className)}
         classNames={{
@@ -83,7 +83,7 @@ function Calendar({
           IconRight: () => <ChevronRight className="h-4 w-4" />,
         }}
         selected={selectedDate}
-        onSelect={handleSelect}
+        onDayClick={handleSelect}
         captionLayout="dropdown-buttons"
         fromYear={2023}
         toYear={2030}
