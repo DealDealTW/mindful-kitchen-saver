@@ -39,6 +39,7 @@ export interface AppSettings {
 interface AppContextType {
   items: Item[];
   addItem: (item: Omit<Item, 'id' | 'dateAdded'>) => void;
+  addMultipleItems: (newItems: Omit<Item, 'id' | 'dateAdded'>[]) => number;
   updateItem: (id: string, item: Partial<Item>) => void;
   deleteItem: (id: string) => void;
   markItemAsUsed: (id: string) => void;
@@ -257,6 +258,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // 新增批量添加項目的函數
+  const addMultipleItems = (newItems: Omit<Item, 'id' | 'dateAdded'>[]) => {
+    const itemsWithIds = newItems.map(item => ({
+      ...item,
+      id: Math.random().toString(36).substring(2, 9),
+      dateAdded: new Date().toISOString(),
+    }));
+    
+    const updatedItems = [...items, ...itemsWithIds];
+    setItems(updatedItems);
+    
+    // 如果有活動家庭群組，同步新數據
+    if (activeFamilyGroup) {
+      syncDataWithGroup(activeFamilyGroup.id);
+    }
+    
+    return itemsWithIds.length; // 返回添加的項目數量
+  };
+
   const updateItem = (id: string, updatedItem: Partial<Item>) => {
     const updatedItems = items.map((item) => 
       (item.id === id ? { ...item, ...updatedItem } : item)
@@ -356,6 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         items,
         addItem,
+        addMultipleItems,
         updateItem,
         deleteItem,
         markItemAsUsed,

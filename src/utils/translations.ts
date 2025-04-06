@@ -167,6 +167,8 @@ export const translations = {
     premiumFeatureTitle: 'Premium Feature',
     premiumFeatureDescription: 'Upgrade to premium to access the photo view feature.',
     upgradeToPremium: 'Upgrade to Premium',
+    batchVoiceInput: 'Batch Voice Input',
+    batchMode: 'Batch Mode',
   },
   'zh-TW': {
     appName: '剩食追蹤',
@@ -334,8 +336,10 @@ export const translations = {
     noImagesDescription: '添加帶照片的物品以在此處查看。',
     addItemWithPhoto: '添加帶照片的物品',
     premiumFeatureTitle: '高級功能',
-    premiumFeatureDescription: '升級到高級版以使用照片視圖功能。',
-    upgradeToPremium: '升級到高級版',
+    premiumFeatureDescription: '升級至高級會員以使用照片視圖功能。',
+    upgradeToPremium: '升級至高級會員',
+    batchVoiceInput: '批量語音輸入',
+    batchMode: '批量模式',
   },
   'zh-CN': {
     appName: '剩食追踪',
@@ -505,6 +509,8 @@ export const translations = {
     premiumFeatureTitle: '高级功能',
     premiumFeatureDescription: '升级到高级版以使用照片视图功能。',
     upgradeToPremium: '升级到高级版',
+    batchVoiceInput: '批量语音输入',
+    batchMode: '批量模式',
   }
 };
 

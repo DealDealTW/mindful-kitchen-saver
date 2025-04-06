@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGridIcon, BarChart3Icon, SettingsIcon } from 'lucide-react';
+import { LayoutGridIcon, BarChart3Icon, SettingsIcon, MicIcon } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
@@ -22,6 +22,8 @@ const BottomNav: React.FC = () => {
           return 'text-whatsleft-green border-t-2 border-whatsleft-green';
         case '/settings':
           return 'text-whatsleft-orange border-t-2 border-whatsleft-orange';
+        case '/test-speech':
+          return 'text-red-500 border-t-2 border-red-500';
         default:
           return 'text-primary border-t-2 border-primary';
       }
@@ -54,6 +56,14 @@ const BottomNav: React.FC = () => {
         >
           <SettingsIcon className="h-5 w-5" />
           <span className="text-xs mt-1 font-medium">{t('settings')}</span>
+        </Link>
+
+        <Link 
+          to="/test-speech" 
+          className={`flex flex-col items-center justify-center w-20 h-full py-1 ${getNavItemStyles('/test-speech')}`}
+        >
+          <MicIcon className="h-5 w-5" />
+          <span className="text-xs mt-1 font-medium">語音測試</span>
         </Link>
       </div>
     </div>

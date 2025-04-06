@@ -11,6 +11,8 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import TopBar from "./components/TopBar";
 import BottomNav from "./components/BottomNav";
+import TestSpeech from "./test-speech";
+import SpeechInput from "./pages/SpeechInput";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,8 @@ const App = () => (
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/test-speech" element={<TestSpeech />} />
+                <Route path="/speech-input" element={<SpeechInput />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusIcon, GridIcon, ListIcon, LayoutGrid, Images, Apple, ShoppingBag, LockIcon } from 'lucide-react';
+import { PlusIcon, GridIcon, ListIcon, LayoutGrid, Images, Apple, ShoppingBag, LockIcon, Mic } from 'lucide-react';
 import ItemCard from '@/components/ItemCard';
 import ItemModal from '@/components/ItemModal';
 import ItemForm from '@/components/ItemForm';
@@ -9,6 +9,7 @@ import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from 'react-router-dom';
 
 // 視圖模式類型
 type ViewMode = 'grid' | 'list' | 'photo';
@@ -20,6 +21,7 @@ const Dashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   
   const t = useTranslation(language);
+  const navigate = useNavigate();
   
   const handleEdit = () => {
     setEditItem(selectedItem);
@@ -156,7 +158,15 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       
-      <div className="fixed bottom-20 right-4 z-20">
+      <div className="fixed bottom-20 right-4 z-20 flex flex-col gap-3">
+        <Button 
+          size="icon" 
+          className="h-12 w-12 rounded-full shadow-lg bg-blue-500 hover:bg-blue-600 transition-all"
+          onClick={() => navigate('/speech-input')}
+          title={t('voiceInput')}
+        >
+          <Mic className="h-5 w-5" />
+        </Button>
         <Button 
           size="icon" 
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all"
