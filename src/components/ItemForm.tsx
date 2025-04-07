@@ -260,7 +260,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem, reAdd
         allowEditing: false,
         resultType: CameraResultType.Uri,
         source: CameraSource.Camera,
-        direction: CameraDirection.REAR,
+        direction: CameraDirection.Rear,
         saveToGallery: true,
         correctOrientation: true,
         width: 1080,
