@@ -98,7 +98,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem, reAdd
   
   const testBatchItems = [
     { id: uuidv4(), name: '固定測試項目一', quantity: '2', category: 'Food' as ItemCategory, daysUntilExpiry: 7, notifyDaysBefore: 2, isEditing: false },
-    { id: uuidv4(), name: '固定測試項目二', quantity: '3', category: 'Household' as ItemCategory, daysUntilExpiry: 14, notifyDaysBefore: 3, isEditing: false }
+    { id: uuidv4(), name: '���定測試項目二', quantity: '3', category: 'Household' as ItemCategory, daysUntilExpiry: 14, notifyDaysBefore: 3, isEditing: false }
   ];
   
   const [batchItems, setBatchItems] = useState<{
@@ -260,7 +260,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem, reAdd
         allowEditing: false,
         resultType: CameraResultType.Uri,
         source: CameraSource.Camera,
-        direction: CameraDirection.Back,
+        direction: CameraDirection.REAR,
         saveToGallery: true,
         correctOrientation: true,
         width: 1080,
@@ -763,7 +763,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ open, onOpenChange, editItem, reAdd
                         ) : (
                           <>
                             <Clock className="h-3 w-3" />
-                            <span>{language === 'en' ? 'Days until expiry: ' : '剩餘天數：'}</span>
+                            <span>{language === 'en' ? 'Days until expiry: ' : '��餘天數：'}</span>
                             <span className="font-medium text-foreground">
                               {typeof daysUntilExpiry === 'number' ? daysUntilExpiry : parseInt(daysUntilExpiry as string) || 0}{' '}
                               {daysUntilExpiry === 1 ? 
