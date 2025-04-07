@@ -21,7 +21,7 @@ const CategoryFilterMenu: React.FC = () => {
   const isCategory = filter === 'All' || filter === 'Food' || filter === 'Household';
 
   return (
-    <div className="flex justify-center space-x-2 mb-4 mt-2">
+    <div className="flex justify-center space-x-2">
       <Button
         variant={isCategory && filter === 'All' ? 'default' : 'outline'}
         className="flex-1 py-6 hover:bg-muted/50"

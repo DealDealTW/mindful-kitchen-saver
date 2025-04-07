@@ -20,6 +20,7 @@ const Notifications: React.FC = () => {
   
   const getAttentionItems = (): Item[] => {
     return items.filter(item => {
+      if (item.used) return false;
       const daysUntil = calculateDaysUntilExpiry(item.expiryDate);
       // Include expired items and items expiring soon (based on notification preference)
       return daysUntil < 0 || (daysUntil >= 0 && daysUntil <= item.notifyDaysBefore);

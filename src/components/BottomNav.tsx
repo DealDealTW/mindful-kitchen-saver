@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGridIcon, BarChart3Icon, SettingsIcon, MicIcon } from 'lucide-react';
+import { LayoutGridIcon, BarChart3Icon, SettingsIcon } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
-  const { language } = useApp();
+  const { language, expiringItemsCount } = useApp();
   const t = useTranslation(language);
   
   const isActive = (path: string) => {
@@ -22,8 +22,6 @@ const BottomNav: React.FC = () => {
           return 'text-whatsleft-green border-t-2 border-whatsleft-green';
         case '/settings':
           return 'text-whatsleft-orange border-t-2 border-whatsleft-orange';
-        case '/test-speech':
-          return 'text-red-500 border-t-2 border-red-500';
         default:
           return 'text-primary border-t-2 border-primary';
       }
@@ -36,10 +34,15 @@ const BottomNav: React.FC = () => {
       <div className="max-w-md w-full mx-auto flex items-center justify-around">
         <Link 
           to="/" 
-          className={`flex flex-col items-center justify-center w-20 h-full py-1 ${getNavItemStyles('/')}`}
+          className={`relative flex flex-col items-center justify-center w-20 h-full py-1 ${getNavItemStyles('/')}`}
         >
           <LayoutGridIcon className="h-5 w-5" />
           <span className="text-xs mt-1 font-medium">{t('dashboard')}</span>
+          {expiringItemsCount > 0 && (
+            <span className="absolute top-1 right-3 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+              {expiringItemsCount}
+            </span>
+          )}
         </Link>
         
         <Link 
@@ -56,14 +59,6 @@ const BottomNav: React.FC = () => {
         >
           <SettingsIcon className="h-5 w-5" />
           <span className="text-xs mt-1 font-medium">{t('settings')}</span>
-        </Link>
-
-        <Link 
-          to="/test-speech" 
-          className={`flex flex-col items-center justify-center w-20 h-full py-1 ${getNavItemStyles('/test-speech')}`}
-        >
-          <MicIcon className="h-5 w-5" />
-          <span className="text-xs mt-1 font-medium">語音測試</span>
         </Link>
       </div>
     </div>

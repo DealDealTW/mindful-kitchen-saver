@@ -19,7 +19,7 @@ import {
   InfoIcon,
   PercentIcon
 } from 'lucide-react';
-import { format, parseISO, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, parseISO, subMonths, startOfMonth, endOfMonth, isWithinInterval, isAfter } from 'date-fns';
 import {
   Select,
   SelectContent,
@@ -41,62 +41,77 @@ const Stats: React.FC = () => {
   const [timeframe, setTimeframe] = useState<string>("thisMonth");
   const [showAllItems, setShowAllItems] = useState<boolean>(false);
   
-  // 計算已使用和已過期（無使用）物品
-  const usedItems = items.filter(item => item.used);
-  const expiredItems = items.filter(item => 
-    !item.used && calculateDaysUntilExpiry(item.expiryDate) < 0
+  // --- 計算時間範圍 --- 
+  const now = new Date();
+  let startDate: Date;
+  let endDate: Date = now; // 默認結束日期為現在
+
+  switch (timeframe) {
+    case 'lastMonth':
+      startDate = startOfMonth(subMonths(now, 1));
+      endDate = endOfMonth(subMonths(now, 1));
+      break;
+    case 'last3Months':
+      startDate = startOfMonth(subMonths(now, 3)); // 從三個月前的第一天開始
+      endDate = endOfMonth(subMonths(now, 1)); // 到上個月的最後一天結束
+      break;
+    case 'last6Months':
+      startDate = startOfMonth(subMonths(now, 6)); // 從六個月前的第一天開始
+      endDate = endOfMonth(subMonths(now, 1)); // 到上個月的最後一天結束
+      break;
+    default: // thisMonth
+      startDate = startOfMonth(now);
+      endDate = now; // 當前月份的結束就是現在
+      break;
+  }
+  // 設定時間到午夜以確保包含邊界日期
+  startDate.setHours(0, 0, 0, 0);
+  endDate.setHours(23, 59, 59, 999);
+  const timeInterval = { start: startDate, end: endDate };
+  // --- 時間範圍計算結束 ---
+  
+  // 計算 **所有** 有效使用和總浪費的物品 (用於潛在的全局統計，如果需要的話)
+  const allEffectivelyUsedItems = items.filter(item => 
+    item.used && item.dateUsed && !isAfter(parseISO(item.dateUsed), parseISO(item.expiryDate))
   );
-  
-  // 按類別統計使用情況
-  const foodItemsUsed = items.filter(item => item.used && item.category === 'Food').length;
-  const householdItemsUsed = items.filter(item => item.used && item.category === 'Household').length;
-  const foodItemsExpired = items.filter(item => 
-    !item.used && calculateDaysUntilExpiry(item.expiryDate) < 0 && item.category === 'Food'
-  ).length;
-  const householdItemsExpired = items.filter(item => 
-    !item.used && calculateDaysUntilExpiry(item.expiryDate) < 0 && item.category === 'Household'
-  ).length;
-  
-  // 根據所選時間範圍篩選過期物品
-  const getFilteredExpiredItems = () => {
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (timeframe) {
-      case 'lastMonth':
-        startDate = startOfMonth(subMonths(now, 1));
-        return expiredItems.filter(item => {
-          const expiryDate = parseISO(item.expiryDate);
-          return isWithinInterval(expiryDate, {
-            start: startDate,
-            end: endOfMonth(subMonths(now, 1))
-          });
-        });
-      case 'last3Months':
-        startDate = subMonths(now, 3);
-        return expiredItems.filter(item => {
-          const expiryDate = parseISO(item.expiryDate);
-          return expiryDate >= startDate && expiryDate <= now;
-        });
-      case 'last6Months':
-        startDate = subMonths(now, 6);
-        return expiredItems.filter(item => {
-          const expiryDate = parseISO(item.expiryDate);
-          return expiryDate >= startDate && expiryDate <= now;
-        });
-      default: // thisMonth
-        startDate = startOfMonth(now);
-        return expiredItems.filter(item => {
-          const expiryDate = parseISO(item.expiryDate);
-          return isWithinInterval(expiryDate, {
-            start: startDate,
-            end: now
-          });
-        });
-    }
-  };
-  
-  const filteredExpiredItems = getFilteredExpiredItems();
+  const allTotalWastedItems = items.filter(item => 
+    (!item.used && calculateDaysUntilExpiry(item.expiryDate) < 0) ||
+    (item.used && item.dateUsed && isAfter(parseISO(item.dateUsed), parseISO(item.expiryDate)))
+  );
+
+  // --- 計算 **時間範圍內** 的統計數據 ---
+  const timeframedEffectivelyUsedItems = items.filter(item => {
+    try {
+      return item.used && item.dateUsed && 
+             !isAfter(parseISO(item.dateUsed), parseISO(item.expiryDate)) &&
+             isWithinInterval(parseISO(item.dateUsed), timeInterval);
+    } catch { return false; }
+  });
+
+  const timeframedTotalWastedItems = items.filter(item => {
+    try {
+      const expiryDate = parseISO(item.expiryDate);
+      // 檢查物品是否在時間範圍內過期，並且滿足浪費條件
+      return isWithinInterval(expiryDate, timeInterval) && 
+             ((!item.used && calculateDaysUntilExpiry(item.expiryDate) < 0) ||
+              (item.used && item.dateUsed && isAfter(parseISO(item.dateUsed), expiryDate)));
+    } catch { return false; }
+  });
+  // --- 時間範圍內統計計算結束 ---
+
+  // --- 計算時間範圍內添加的物品 ---
+  const timeframedAddedItems = items.filter(item => {
+    try {
+      return item.dateAdded && isWithinInterval(parseISO(item.dateAdded), timeInterval);
+    } catch { return false; }
+  });
+  // --- 時間範圍內添加計算結束 ---
+
+  // 按類別統計 (基於時間範圍內數據)
+  const foodItemsUsed = timeframedEffectivelyUsedItems.filter(item => item.category === 'Food').length;
+  const householdItemsUsed = timeframedEffectivelyUsedItems.filter(item => item.category === 'Household').length;
+  const foodItemsExpired = timeframedTotalWastedItems.filter(item => item.category === 'Food').length;
+  const householdItemsExpired = timeframedTotalWastedItems.filter(item => item.category === 'Household').length;
   
   // 收集浪費數據
   interface WasteData {
@@ -108,7 +123,8 @@ const Stats: React.FC = () => {
   const getWasteStats = () => {
     const wasteMap: Record<string, WasteData> = {};
     
-    filteredExpiredItems.forEach(item => {
+    // 使用 timeframedTotalWastedItems 計算浪費統計
+    timeframedTotalWastedItems.forEach(item => { 
       if (!wasteMap[item.name]) {
         wasteMap[item.name] = {
           name: item.name,
@@ -128,25 +144,25 @@ const Stats: React.FC = () => {
   const statsCards = [
     { 
       title: t('itemsTracked'), 
-      value: items.length, 
+      value: timeframedAddedItems.length, 
       icon: <Layers className="h-5 w-5 text-primary" />,
       color: 'bg-primary/10'
     },
     { 
       title: t('efficiency'), 
-      value: `${Math.round((usedItems.length / (usedItems.length + expiredItems.length || 1)) * 100)}%`, 
-      icon: <PercentIcon className="h-5 w-5 text-primary" />,
-      color: 'bg-primary/10' 
+      value: `${Math.round((timeframedEffectivelyUsedItems.length / (timeframedEffectivelyUsedItems.length + timeframedTotalWastedItems.length || 1)) * 100)}%`, 
+      icon: <PercentIcon className="h-5 w-5 text-emerald-600" />,
+      color: 'bg-emerald-600/10'
     },
     { 
       title: t('itemsUsed'), 
-      value: usedItems.length, 
+      value: timeframedEffectivelyUsedItems.length, 
       icon: <CheckCircle className="h-5 w-5 text-emerald-600" />,
       color: 'bg-emerald-600/10' 
     },
     { 
-      title: t('expired'), 
-      value: expiredItems.length, 
+      title: t('wasted'), 
+      value: timeframedTotalWastedItems.length, 
       icon: <AlertCircle className="h-5 w-5 text-whatsleft-red" />,
       color: 'bg-whatsleft-red/10' 
     },
@@ -208,7 +224,7 @@ const Stats: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {filteredExpiredItems.length === 0 ? (
+            {timeframedTotalWastedItems.length === 0 ? (
               <div className="text-center text-muted-foreground py-6">
                 {t('noItems')}
               </div>

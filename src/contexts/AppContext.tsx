@@ -66,6 +66,7 @@ interface AppContextType {
   loadDataFromGroup: (groupId: string) => Promise<boolean>;
   setCurrentUser: (user: User | null) => void;
   togglePremiumStatus: () => void;
+  expiringItemsCount: number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -81,8 +82,17 @@ export const useApp = () => {
 export const calculateDaysUntilExpiry = (expiryDate: string): number => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const expiry = parseISO(expiryDate);
-  return differenceInDays(expiry, today);
+  try {
+    const expiry = parseISO(expiryDate);
+    if (isNaN(expiry.getTime())) {
+      console.warn(`Invalid date format for expiryDate: ${expiryDate}`);
+      return 9999; // Return a large number for invalid dates
+    }
+    return differenceInDays(expiry, today);
+  } catch (error) {
+    console.error(`Error parsing date: ${expiryDate}`, error);
+    return 9999; // Return a large number on error
+  }
 };
 
 export const getExpiryDateFromDays = (days: number | string): string => {
@@ -131,6 +141,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [familyGroups, setFamilyGroups] = useState<FamilyGroup[]>([]);
   const [activeFamilyGroup, setActiveFamilyGroup] = useState<FamilyGroup | null>(null);
 
+  // 添加 expiringItemsCount 狀態
+  const [expiringItemsCount, setExpiringItemsCount] = useState<number>(0);
+
   // 切換高級會員狀態的函數
   const togglePremiumStatus = () => {
     console.log('切換高級會員狀態函數被調用');
@@ -149,6 +162,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(updatedUser);
     localStorage.setItem('currentUser', JSON.stringify(updatedUser));
   };
+
+  // 計算即將過期和已過期的項目數量
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const count = items.filter(item => {
+      if (item.used) return false; // 忽略已使用的項目
+      try {
+        const expiry = parseISO(item.expiryDate);
+        if (isNaN(expiry.getTime())) return false; // 忽略無效日期
+        
+        const daysLeft = differenceInDays(expiry, today);
+        // 檢查是否在通知天數內或已過期
+        return daysLeft <= (typeof settings.defaultNotifyDays === 'string' 
+                           ? parseInt(settings.defaultNotifyDays) 
+                           : settings.defaultNotifyDays) || daysLeft < 0;
+      } catch {
+        return false; // 忽略解析錯誤的日期
+      }
+    }).length;
+    
+    setExpiringItemsCount(count);
+    console.log("Updated expiring items count:", count);
+  }, [items, settings.defaultNotifyDays]); // 依賴 items 和通知天數設置
 
   useEffect(() => {
     localStorage.setItem('whatsleftItems', JSON.stringify(items));
@@ -402,7 +440,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         syncDataWithGroup,
         loadDataFromGroup,
         setCurrentUser,
-        togglePremiumStatus
+        togglePremiumStatus,
+        expiringItemsCount
       }}
     >
       {children}

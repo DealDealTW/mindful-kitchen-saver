@@ -12,6 +12,7 @@ import { ItemCategory, useApp, getExpiryDateFromDays } from '@/contexts/AppConte
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from '@/utils/translations';
+import { flushSync } from 'react-dom';
 
 interface RecognizedItem {
   id: string;
@@ -225,30 +226,67 @@ const SpeechInput: React.FC = () => {
     }));
   };
 
-  const handleSaveAll = () => {
-    // 添加所有項目到主程序
-    items.forEach(item => {
-      addItem({
-        name: item.name,
-        quantity: item.quantity,
-        category: item.category,
-        daysUntilExpiry: item.daysUntilExpiry,
-        notifyDaysBefore: item.notifyDaysBefore,
-        expiryDate: getExpiryDateFromDays(item.daysUntilExpiry),
+  const handleSaveAll = async () => {
+    if (items.length === 0) {
+      console.warn("[handleSaveAll] 沒有要保存的項目");
+      return;
+    }
+    
+    const itemsToSave = [...items];
+    console.log(`[handleSaveAll] 準備添加 ${itemsToSave.length} 個項目`);
+
+    try {
+      console.time("addItemLoop");
+      itemsToSave.forEach((item, index) => {
+        console.log(`[handleSaveAll] 調用 addItem #${index + 1} for: ${item.name}`);
+        addItem({ // 假設 addItem 是同步的
+          name: item.name,
+          quantity: item.quantity,
+          category: item.category,
+          daysUntilExpiry: item.daysUntilExpiry,
+          notifyDaysBefore: item.notifyDaysBefore,
+          expiryDate: getExpiryDateFromDays(item.daysUntilExpiry),
+        });
       });
-    });
-    
-    // 顯示成功消息
-    toast({
-      title: "成功添加",
-      description: `已成功添加 ${items.length} 個項目到清單中`,
-    });
-    
-    // 清空項目列表
-    setItems([]);
-    
-    // 導航到主頁查看添加的項目
-    navigate('/');
+      console.timeEnd("addItemLoop");
+      console.log("[handleSaveAll] 所有 addItem 調用完成");
+
+      // 顯示成功消息
+      toast({
+        title: "成功添加",
+        description: `已成功添加 ${itemsToSave.length} 個項目到清單中`,
+      });
+
+      // 在導航前清空狀態 (移除 flushSync)
+      console.log("[handleSaveAll] 準備清空本地項目列表 (setItems)");
+      setItems([]); 
+      console.log("[handleSaveAll] 本地項目列表已請求清空");
+
+      // 增加延遲，給 React 更多時間處理狀態更新和可能的副作用
+      console.log("[handleSaveAll] 計劃延遲 150ms 後執行導航");
+      setTimeout(() => {
+        console.log("[handleSaveAll] setTimeout 觸發，執行導航到 '/'");
+        try {
+          navigate('/');
+          console.log("[handleSaveAll] navigate('/') 調用成功");
+        } catch (navError) {
+          console.error("[handleSaveAll] navigate('/') 調用失敗:", navError);
+          toast({
+            variant: "destructive",
+            title: "導航失敗",
+            description: "無法返回主頁，請手動操作。",
+          });
+        }
+      }, 150); // 增加延遲到 150ms
+
+    } catch (error) {
+      console.error("[handleSaveAll] 批量添加項目時出錯：", error);
+      toast({
+        variant: "destructive",
+        title: "添加失敗",
+        description: "添加項目時發生錯誤，請重試",
+      });
+    }
   };
 
   return (

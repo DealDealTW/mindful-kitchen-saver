@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import { AppProvider, useApp } from "./contexts/AppContext";
 import Dashboard from "./pages/Dashboard";
 import Stats from "./pages/Stats";
@@ -11,7 +11,6 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import TopBar from "./components/TopBar";
 import BottomNav from "./components/BottomNav";
-import TestSpeech from "./test-speech";
 import SpeechInput from "./pages/SpeechInput";
 
 const queryClient = new QueryClient();
@@ -20,6 +19,7 @@ const queryClient = new QueryClient();
 const RouteChangeHandler = () => {
   const { setSelectedItem } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setSelectedItem(null);
@@ -42,13 +42,11 @@ const App = () => (
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/test-speech" element={<TestSpeech />} />
                 <Route path="/speech-input" element={<SpeechInput />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <BottomNav />
-            {/* 使用內部自定義組件監聽路由變化 */}
             <RouteWrapper />
           </div>
         </BrowserRouter>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusIcon, GridIcon, ListIcon, LayoutGrid, Images, Apple, ShoppingBag, LockIcon, Mic } from 'lucide-react';
+import { PlusIcon, GridIcon, ListIcon, LayoutGrid, Images, Apple, ShoppingBag, LockIcon, Mic, Camera } from 'lucide-react';
 import ItemCard from '@/components/ItemCard';
 import ItemModal from '@/components/ItemModal';
 import ItemForm from '@/components/ItemForm';
-import { useApp } from '@/contexts/AppContext';
+import { useApp, Item } from '@/contexts/AppContext';
 import { calculateDaysUntilExpiry } from '@/contexts/AppContext';
 import { useTranslation } from '@/utils/translations';
 import CategoryFilterMenu from '@/components/CategoryFilterMenu';
@@ -17,23 +17,36 @@ type ViewMode = 'grid' | 'list' | 'photo';
 const Dashboard: React.FC = () => {
   const { items, filter, sort, selectedItem, language, setSelectedItem, currentUser, togglePremiumStatus } = useApp();
   const [formOpen, setFormOpen] = useState(false);
-  const [editItem, setEditItem] = useState<typeof selectedItem>(null);
+  const [editItem, setEditItem] = useState<Item | null>(null);
+  const [reAddItem, setReAddItem] = useState<Item | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   
   const t = useTranslation(language);
   const navigate = useNavigate();
   
   const handleEdit = () => {
+    if (!selectedItem) return;
     setEditItem(selectedItem);
+    setReAddItem(null);
     setFormOpen(true);
   };
   
   const handleAddItem = () => {
     setEditItem(null);
+    setReAddItem(null);
+    setFormOpen(true);
+  };
+
+  const handleTriggerReAdd = (itemToReAdd: Item) => {
+    setEditItem(null);
+    setReAddItem(itemToReAdd);
     setFormOpen(true);
   };
   
-  const filteredItems = items.filter(item => {
+  // 首先過濾掉已使用的物品
+  const activeItems = items.filter(item => !item.used);
+
+  const filteredItems = activeItems.filter(item => {
     if (filter === 'All') return true;
     if (filter === 'Food' || filter === 'Household') return item.category === filter;
     if (filter === 'Expiring') {
@@ -62,52 +75,53 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="w-full max-w-md mx-auto px-2 py-4 pb-16">
-      <div className="flex justify-between items-center mb-4">
-        <CategoryFilterMenu />
-        <div className="flex items-center gap-2">
-          {/* 高級會員開關 */}
-          <Button
-            variant="outline"
-            size="sm"
-            className={`text-xs ${isSubscribed ? 'bg-whatsleft-yellow text-black' : 'bg-muted'}`}
-            onClick={() => {
-              console.log('Dashboard中點擊了高級會員按鈕');
-              togglePremiumStatus();
-            }}
+      {/* 分類過濾器放在頂部 */}
+      <CategoryFilterMenu />
+      
+      {/* 將高級會員開關和視圖選擇放在過濾器下方 */}
+      <div className="flex justify-between items-center mb-4 mt-2">
+        {/* 高級會員開關 */}
+        <Button
+          variant="outline"
+          size="sm"
+          className={`text-xs ${isSubscribed ? 'bg-whatsleft-yellow text-black' : 'bg-muted'}`}
+          onClick={() => {
+            console.log('Dashboard中點擊了高級會員按鈕');
+            togglePremiumStatus();
+          }}
+        >
+          {isSubscribed ? t('premiumActive') : t('premiumInactive')}
+        </Button>
+        
+        <div className="flex items-center space-x-1 bg-muted/50 p-1 rounded-md">
+          <Button 
+            variant={viewMode === 'grid' ? 'default' : 'ghost'} 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => setViewMode('grid')}
+            title={t('gridView')}
           >
-            {isSubscribed ? t('premiumActive') : t('premiumInactive')}
+            <LayoutGrid className="h-4 w-4" />
           </Button>
-          
-          <div className="flex items-center space-x-1 bg-muted/50 p-1 rounded-md">
-            <Button 
-              variant={viewMode === 'grid' ? 'default' : 'ghost'} 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={() => setViewMode('grid')}
-              title={t('gridView')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={viewMode === 'list' ? 'default' : 'ghost'} 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={() => setViewMode('list')}
-              title={t('listView')}
-            >
-              <ListIcon className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={viewMode === 'photo' ? 'default' : 'ghost'} 
-              size="icon" 
-              className="h-8 w-8 relative" 
-              onClick={() => isSubscribed ? setViewMode('photo') : setViewMode('grid')}
-              title={isSubscribed ? t('photoView') : t('premiumFeature')}
-            >
-              <Images className="h-4 w-4" />
-              {!isSubscribed && <LockIcon className="h-3 w-3 absolute top-0 right-0 text-whatsleft-yellow" />}
-            </Button>
-          </div>
+          <Button 
+            variant={viewMode === 'list' ? 'default' : 'ghost'} 
+            size="icon" 
+            className="h-8 w-8" 
+            onClick={() => setViewMode('list')}
+            title={t('listView')}
+          >
+            <ListIcon className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant={viewMode === 'photo' ? 'default' : 'ghost'} 
+            size="icon" 
+            className="h-8 w-8 relative" 
+            onClick={() => isSubscribed ? setViewMode('photo') : setViewMode('grid')}
+            title={isSubscribed ? t('photoView') : t('premiumFeature')}
+          >
+            <Images className="h-4 w-4" />
+            {!isSubscribed && <LockIcon className="h-3 w-3 absolute top-0 right-0 text-whatsleft-yellow" />}
+          </Button>
         </div>
       </div>
       
@@ -158,30 +172,28 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       
-      <div className="fixed bottom-20 right-4 z-20 flex flex-col gap-3">
-        <Button 
-          size="icon" 
-          className="h-12 w-12 rounded-full shadow-lg bg-blue-500 hover:bg-blue-600 transition-all"
-          onClick={() => navigate('/speech-input')}
-          title={t('voiceInput')}
-        >
-          <Mic className="h-5 w-5" />
-        </Button>
-        <Button 
-          size="icon" 
-          className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all"
-          onClick={handleAddItem}
-        >
-          <PlusIcon className="h-6 w-6" />
-        </Button>
+      {/* 固定在屏幕右下角的添加按鈕 */}
+      <div className="fixed bottom-16 right-4 z-20">
+         <Button 
+           size="icon" 
+           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-all"
+           onClick={handleAddItem}
+           aria-label={t('addItem')}
+         >
+           <PlusIcon className="h-6 w-6" />
+         </Button>
       </div>
       
-      <ItemModal onEdit={handleEdit} />
+      <ItemModal 
+        onEdit={handleEdit} 
+        onReAdd={handleTriggerReAdd} 
+       />
       
       <ItemForm 
         open={formOpen} 
         onOpenChange={setFormOpen}
         editItem={editItem}
+        reAddItem={reAddItem}
       />
     </div>
   );
